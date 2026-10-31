@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Pause</title>
+  <meta name="description" content="Une pause avant de scroller.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Pause">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="auth-gate" hidden>
+    <div class="auth-card">
+      <img class="auth-logo" src="images/icon-192.png" alt="" width="72" height="72">
+      <h1 id="auth-title">Connexion</h1>
+      <p class="auth-subtitle">Le même compte que pour Aurora.</p>
+
+      <form id="auth-form">
+        <div class="list">
+          <label class="row"><input class="row-input" type="email" id="auth-email" placeholder="Email" required autocomplete="email"></label>
+          <label class="row"><input class="row-input" type="password" id="auth-password" placeholder="Mot de passe" required autocomplete="current-password" minlength="6"></label>
+        </div>
+        <p id="auth-error" class="auth-error" hidden></p>
+        <p id="auth-info" class="auth-info" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block" id="auth-submit-btn">Se connecter</button>
+      </form>
+
+      <p class="auth-switch">
+        <span id="auth-switch-text">Pas encore de compte ?</span>
+        <button type="button" class="link-button" id="auth-toggle-mode">Créer un compte</button>
+      </p>
+    </div>
+  </div>
+
+  <div id="app-shell" class="app-shell" hidden>
+    <div class="nav-bar" id="nav-bar">
+      <span class="nav-title" id="nav-title"></span>
+    </div>
+
+    <main>
+      <section class="tab-panel active" id="tab-home" role="tabpanel"></section>
+      <section class="tab-panel" id="tab-week" role="tabpanel"></section>
+      <section class="tab-panel" id="tab-challenges" role="tabpanel"></section>
+      <section class="tab-panel" id="tab-todo" role="tabpanel"></section>
+    </main>
+
+    <nav class="tab-bar" role="tablist">
+      <button class="tab-btn active" data-tab="home" role="tab" aria-selected="true">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="14" r="9.5"/><circle cx="14" cy="14" r="4.5"/></svg>
+        <span>Accueil</span>
+      </button>
+      <button class="tab-btn" data-tab="week" role="tab" aria-selected="false">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="20" height="18" rx="4"/><path d="M4 11h20M9.5 3.5v4M18.5 3.5v4"/><path d="M9 15.5h2M13 15.5h2M17 15.5h2M9 19h2M13 19h2"/></svg>
+        <span>Ma semaine</span>
+      </button>
+      <button class="tab-btn" data-tab="challenges" role="tab" aria-selected="false">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 24.5V4.5"/><path d="M7 5h13.5l-2.8 4.8 2.8 4.7H7"/></svg>
+        <span>Mes défis</span>
+      </button>
+      <button class="tab-btn" data-tab="todo" role="tab" aria-selected="false">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="8" r="2.2"/><circle cx="7" cy="14" r="2.2"/><circle cx="7" cy="20" r="2.2"/><path d="M12.5 8h11M12.5 14h11M12.5 20h11"/></svg>
+        <span>To Do List</span>
+      </button>
+    </nav>
+  </div>
+
+  <div id="sheet-root"></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/activities.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/rules.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/home.js"></script>
+  <script src="js/week.js"></script>
+  <script src="js/challenges.js"></script>
+  <script src="js/todo.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
