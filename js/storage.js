@@ -224,6 +224,31 @@ const Storage = (() => {
     return plan;
   }
 
+  async function updatePlanRow(id, fields) {
+    const data = await run(supabaseClient.from("pause_plans").update(fields).eq("id", id).select().single(), "déplacement de l'activité");
+    if (!data) return null;
+    const plan = rowToPlan(data);
+    replaceIn("plans", plan);
+    return plan;
+  }
+
+  // Déplace une activité vers un autre créneau. Si le créneau est déjà pris,
+  // les deux activités échangent leur place (en passant par une date provisoire,
+  // la base n'acceptant qu'une activité par créneau). Une activité faite le
+  // reste ; une activité « Pas faite » redevient simplement prévue.
+  async function movePlan(plan, date, slot) {
+    const other = planAt(date, slot);
+    const keepStatus = (p) => (p.status === "done" ? "done" : null);
+    if (other) {
+      if (!(await updatePlanRow(other.id, { date: "1900-01-01" }))) return null;
+      const moved = await updatePlanRow(plan.id, { date, slot, status: keepStatus(plan) });
+      const swapped = await updatePlanRow(other.id, { date: plan.date, slot: plan.slot, status: keepStatus(other) });
+      return moved && swapped ? [moved, swapped] : null;
+    }
+    const moved = await updatePlanRow(plan.id, { date, slot, status: keepStatus(plan) });
+    return moved ? [moved] : null;
+  }
+
   async function removePlan(id) {
     const data = await run(supabaseClient.from("pause_plans").delete().eq("id", id), "retrait de l'activité");
     if (data !== null) removeFrom("plans", id);
@@ -349,6 +374,7 @@ const Storage = (() => {
     planAt,
     setPlan,
     setPlanStatus,
+    movePlan,
     removePlan,
     getChallenges,
     addChallenge,

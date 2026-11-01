@@ -61,6 +61,7 @@ const Week = (() => {
           <button type="button" class="icon-button" id="week-next" aria-label="Semaine suivante">${icon("chevronRight")}</button>
         </div>
         <div class="card week-grid" id="week-grid"></div>
+        <p class="grid-hint">Maintiens une activité puis fais-la glisser pour la déplacer.</p>
         <div class="grid-legend">
           <span><i class="legend-swatch legend-upcoming"></i>Prévue</span>
           <span><i class="legend-swatch legend-done"></i>Faite</span>
@@ -225,16 +226,151 @@ const Week = (() => {
         const mark = !plan ? "" : state === "done" ? "check" : plan.status === "not_done" ? "close" : state === "missed" ? "alert" : "";
         const cell = html(`
           <button type="button" class="grid-cell${plan ? ` cat-${plan.category} state-${state}` : " is-empty"}"
+            data-date="${date}" data-slot="${slot.id}"
             aria-label="${escapeHtml(`${DateUtil.long(date)}, ${slot.label} : ${plan ? plan.activity : "libre"}`)}">
             ${plan ? `<span class="grid-cell-dot dot-${plan.category}"></span><span class="grid-cell-text">${escapeHtml(plan.activity)}</span>` : ""}
             ${mark ? `<span class="grid-cell-mark mark-${mark}">${icon(mark)}</span>` : ""}
           </button>
         `);
-        cell.addEventListener("click", () => openCell(date, slot));
+        cell.addEventListener("click", () => {
+          if (!Drag.justDropped()) openCell(date, slot);
+        });
+        if (plan) Drag.enable(cell, plan);
         cells.appendChild(cell);
       });
       container.appendChild(row);
     });
+  }
+
+  /* --- Glisser-déposer : maintenir une activité, puis la faire glisser vers une autre case --- */
+
+  const Drag = (() => {
+    const HOLD_MS = 350;
+    const EDGE = 110;
+    let state = null;
+    let dropped = false;
+
+    // Pendant un glisser, le doigt ne doit pas faire défiler la page.
+    document.addEventListener("touchmove", (e) => {
+      if (state) e.preventDefault();
+    }, { passive: false });
+
+    function enable(cell, plan) {
+      let timer = null;
+      let start = null;
+
+      cell.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0 || state) return;
+        start = { x: e.clientX, y: e.clientY };
+        timer = setTimeout(() => begin(cell, plan, start.x, start.y), HOLD_MS);
+      });
+      cell.addEventListener("pointermove", (e) => {
+        if (timer && start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      });
+      ["pointerup", "pointercancel"].forEach((type) =>
+        cell.addEventListener(type, () => {
+          clearTimeout(timer);
+          timer = null;
+        })
+      );
+      cell.addEventListener("contextmenu", (e) => e.preventDefault());
+    }
+
+    function begin(cell, plan, x, y) {
+      const rect = cell.getBoundingClientRect();
+      const ghost = cell.cloneNode(true);
+      ghost.classList.add("drag-ghost");
+      ghost.style.width = `${rect.width}px`;
+      ghost.style.height = `${rect.height}px`;
+      document.body.appendChild(ghost);
+      cell.classList.add("drag-source");
+      document.body.classList.add("dragging");
+
+      state = { plan, cell, ghost, offsetX: x - rect.left, offsetY: y - rect.top, x, y, target: null, frame: null };
+      place();
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+      document.addEventListener("pointercancel", cancel);
+      state.frame = requestAnimationFrame(autoScroll);
+    }
+
+    function place() {
+      state.ghost.style.transform = `translate(${state.x - state.offsetX}px, ${state.y - state.offsetY}px) scale(1.08)`;
+      const under = document.elementFromPoint(state.x, state.y);
+      const target = under && under.closest(".grid-cell");
+      const valid = target && target !== state.cell ? target : null;
+      if (valid !== state.target) {
+        if (state.target) state.target.classList.remove("drop-target");
+        if (valid) valid.classList.add("drop-target");
+        state.target = valid;
+      }
+    }
+
+    function onMove(e) {
+      state.x = e.clientX;
+      state.y = e.clientY;
+      place();
+    }
+
+    // Près du haut ou du bas de l'écran, la page défile toute seule.
+    function autoScroll() {
+      if (!state) return;
+      if (state.y < EDGE) window.scrollBy(0, -Math.ceil((EDGE - state.y) / 10));
+      else if (state.y > window.innerHeight - EDGE) window.scrollBy(0, Math.ceil((state.y - (window.innerHeight - EDGE)) / 10));
+      place();
+      state.frame = requestAnimationFrame(autoScroll);
+    }
+
+    function finish() {
+      const current = state;
+      state = null;
+      cancelAnimationFrame(current.frame);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", cancel);
+      current.ghost.remove();
+      current.cell.classList.remove("drag-source");
+      if (current.target) current.target.classList.remove("drop-target");
+      document.body.classList.remove("dragging");
+      // Le relâchement déclenche aussi un « clic » : on ne rouvre pas la feuille.
+      dropped = true;
+      setTimeout(() => (dropped = false), 400);
+      return current;
+    }
+
+    function cancel() {
+      if (state) finish();
+    }
+
+    async function onUp() {
+      const { plan, target } = finish();
+      if (!target) return;
+      await movePlan(plan, target.dataset.date, target.dataset.slot);
+    }
+
+    return { enable, justDropped: () => dropped };
+  })();
+
+  async function movePlan(plan, date, slot) {
+    const before = Storage.getPlans().filter((p) => p.id === plan.id || (p.date === date && p.slot === slot)).map((p) => ({ ...p }));
+    const moved = await Storage.movePlan(plan, date, slot);
+    if (!moved) {
+      render();
+      return;
+    }
+    // Un apprentissage fait change de jour : le jour compté pour son défi suit.
+    for (const old of before.filter((p) => p.status === "done" && p.category === "apprentissage")) {
+      await Rules.afterPlanStatusChange({ ...old, status: null });
+    }
+    for (const p of moved) {
+      if (p.status === "done") await Rules.afterPlanStatusChange(p);
+      if (p.activity === TODO_ACTIVITY) await Rules.syncTodoActivity(p.date);
+    }
+    App.renderAll();
+    showToast(moved.length > 1 ? "Activités échangées." : "Activité déplacée.");
   }
 
   function openCell(date, slot) {

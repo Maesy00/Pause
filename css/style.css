@@ -1444,6 +1444,47 @@ button {
 .mark-close,
 .mark-alert { background: var(--missed); }
 
+.grid-cell:not(.is-empty) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.grid-cell.drag-source {
+  opacity: 0.35;
+  transform: scale(0.94);
+}
+
+.grid-cell.drop-target {
+  outline: 2.5px solid var(--accent);
+  outline-offset: 1px;
+  transform: scale(1.04);
+}
+
+.drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  margin: 0;
+  pointer-events: none;
+  transition: none;
+  box-shadow: 0 16px 32px -10px rgba(40, 34, 110, 0.45);
+}
+
+body.dragging {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: grabbing;
+}
+
+.grid-hint {
+  margin: 10px 6px 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--label-2);
+}
+
 .grid-legend {
   display: flex;
   justify-content: center;
