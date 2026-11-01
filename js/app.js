@@ -43,6 +43,11 @@ const App = (() => {
 
   tabButtons.forEach((btn) => btn.addEventListener("click", () => go(btn.dataset.tab)));
 
+  // Safari sur iPhone ignore parfois user-scalable=no : on bloque aussi le geste de pincement.
+  ["gesturestart", "gesturechange"].forEach((type) =>
+    document.addEventListener(type, (event) => event.preventDefault(), { passive: false })
+  );
+
   // Revenir sur l'app (depuis l'écran d'accueil de l'iPhone) compte comme une
   // nouvelle ouverture : on recharge les données et on revient à l'accueil
   // si l'app est restée de côté plus de 5 minutes.
