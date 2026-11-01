@@ -23,14 +23,14 @@ const Storage = (() => {
       id: row.id,
       createdAt: row.created_at,
       need: row.need,
-      suggestion: row.suggestion,
+      suggestion: row.suggestion && currentActivityName(row.suggestion),
       outcome: row.outcome,
       answeredAt: row.answered_at,
     };
   }
 
   function rowToPlan(row) {
-    return { id: row.id, date: row.date, slot: row.slot, activity: row.activity, category: row.category, status: row.status };
+    return { id: row.id, date: row.date, slot: row.slot, activity: currentActivityName(row.activity), category: row.category, status: row.status };
   }
 
   function rowToChallenge(row) {

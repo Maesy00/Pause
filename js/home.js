@@ -233,7 +233,6 @@ const Home = (() => {
           });
           body.appendChild(back);
           renderActivityPicker(body, {
-            withBreathing: true,
             selected: draft.suggestion,
             onPick(activity) {
               draft.suggestion = activity.name;
@@ -405,7 +404,7 @@ const Home = (() => {
   // Groupes d'alternatives. Le soir en semaine : seulement la détente,
   // l'apprentissage reste à un appui (« Plutôt envie d'apprendre ? »).
   function alternativeGroups(state) {
-    const detente = [BREATHING, ...Activities.byCategory("detente").map((a) => a.name)];
+    const detente = Activities.byCategory("detente").map((a) => a.name);
     const groups = [{ id: "pour-toi", label: "Pour toi", items: state.suggestions }];
     const eveningWeekday = DateUtil.isWeekdayEvening();
     if (!eveningWeekday) groups.push({ id: "sport", label: "Sport", items: Activities.byCategory("sport").map((a) => a.name) });

@@ -102,7 +102,7 @@ const Rules = (() => {
     return Storage.getTasks().some((t) => t.doneAt && DateUtil.toKey(new Date(t.doneAt)) === date);
   }
 
-  // Cocher au moins une tâche passe « Avancer ma to-do list » du jour en « Fait ».
+  // Cocher au moins une tâche passe l'activité « To-Do List » du jour en « Fait ».
   async function syncTodoActivity(date = DateUtil.today()) {
     if (!tasksDoneOn(date)) return;
     const plans = Storage.getPlans().filter((p) => p.date === date && p.activity === TODO_ACTIVITY && p.status !== "done");
@@ -135,11 +135,12 @@ const Rules = (() => {
     if (learning) {
       pool = Activities.byCategory("apprentissage").map((a) => a.name);
     } else {
+      const catalog = new Set(DEFAULT_ACTIVITIES.map((a) => a.name.toLowerCase()));
       const custom = Storage.getActivities()
-        .filter((a) => NEED_CUSTOM_CATEGORIES[need].includes(a.category))
+        .filter((a) => !catalog.has(a.name.toLowerCase()) && NEED_CUSTOM_CATEGORIES[need].includes(a.category))
         .map((a) => a.name);
       pool = [...NEED_SUGGESTIONS[need], ...custom];
-      if (eveningWeekday) pool = pool.filter((name) => name === BREATHING || Activities.categoryOf(name) === "detente");
+      if (eveningWeekday) pool = pool.filter((name) => Activities.categoryOf(name) === "detente");
       if (pool.length < 4) pool.push(...Activities.byCategory("detente").map((a) => a.name));
     }
 

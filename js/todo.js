@@ -6,8 +6,8 @@
 const Todo = (() => {
   const panel = document.getElementById("tab-todo");
 
-  // Cocher / décocher une tâche. Cocher fait aussi passer « Avancer ma
-  // to-do list » du jour en « Fait » (voir Rules.syncTodoActivity).
+  // Cocher / décocher une tâche. Cocher fait aussi passer l'activité
+  // « To-Do List » du jour en « Fait » (voir Rules.syncTodoActivity).
   async function toggle(task) {
     const doneAt = task.doneAt ? null : new Date().toISOString();
     const updated = await Storage.updateTask(task.id, { doneAt });

@@ -241,7 +241,7 @@ function segmented(options, value, onChange, { small = false } = {}) {
 
 /* --- Choix d'une activité (liste groupée par catégorie + ajout) --- */
 
-function renderActivityPicker(container, { categories = CATEGORY_ORDER, onPick, selected = null, withBreathing = false }) {
+function renderActivityPicker(container, { categories = CATEGORY_ORDER, onPick, selected = null }) {
   categories.forEach((category) => {
     const group = html(`
       <section class="group">
@@ -250,9 +250,7 @@ function renderActivityPicker(container, { categories = CATEGORY_ORDER, onPick, 
       </section>
     `);
     const list = group.querySelector(".list");
-    const activities = Activities.byCategory(category);
-    if (withBreathing && category === "detente") activities.unshift({ name: BREATHING, category: "detente" });
-    activities.forEach((activity) => {
+    Activities.byCategory(category).forEach((activity) => {
       const row = html(`
         <button type="button" class="row row-button">
           ${activityBadge(activity.name, "sm")}
@@ -295,7 +293,7 @@ function renderActivityPicker(container, { categories = CATEGORY_ORDER, onPick, 
     event.preventDefault();
     const name = form.elements.name.value.trim();
     if (!name) return;
-    if (name === BREATHING || Activities.all().some((a) => a.name.toLowerCase() === name.toLowerCase())) {
+    if (Activities.all().some((a) => a.name.toLowerCase() === name.toLowerCase())) {
       showToast("Cette activité existe déjà.");
       return;
     }
@@ -305,7 +303,7 @@ function renderActivityPicker(container, { categories = CATEGORY_ORDER, onPick, 
   container.appendChild(form);
 }
 
-/* --- Aperçu de 3 tâches (pour « Avancer ma to-do list ») --- */
+/* --- Aperçu de 3 tâches (pour l'activité « To-Do List ») --- */
 
 function renderTodoPreview(container, { onChange } = {}) {
   const tasks = Storage.getTasks().filter((t) => !t.doneAt).slice(0, 3);

@@ -13,7 +13,7 @@ const CATEGORIES = {
 const CATEGORY_ORDER = ["sport", "detente", "apprentissage"];
 
 const BREATHING = "Respiration guidée";
-const TODO_ACTIVITY = "Avancer ma to-do list";
+const TODO_ACTIVITY = "To-Do List";
 
 const DEFAULT_ACTIVITIES = [
   { name: "Course à pied", category: "sport" },
@@ -21,21 +21,33 @@ const DEFAULT_ACTIVITIES = [
   { name: "Vélo", category: "sport" },
   { name: "Renforcement", category: "sport" },
   { name: "Yoga/Pilates", category: "sport" },
-  { name: "Rien du tout sur le canapé (sans écran)", category: "detente" },
-  { name: "Album ou podcast", category: "detente" },
-  { name: "Longue douche chaude", category: "detente" },
-  { name: "Marche dans le quartier", category: "detente" },
+  { name: BREATHING, category: "detente" },
+  { name: "Méditation", category: "detente" },
+  { name: "Skincare", category: "detente" },
+  { name: "Promenade", category: "detente" },
   { name: "Mots fléchés", category: "detente" },
   { name: "Sudoku", category: "detente" },
-  { name: "Tricot ou crochet", category: "detente" },
-  { name: "Cuisiner", category: "detente" },
+  { name: "Tricot/Crochet", category: "detente" },
   { name: "Lecture", category: "detente" },
-  { name: "Film ou épisode choisi à l'avance", category: "detente" },
+  { name: "Film/Série", category: "detente" },
   { name: TODO_ACTIVITY, category: "detente" },
   { name: "Échecs", category: "apprentissage" },
   { name: "Couture", category: "apprentissage" },
   { name: "Piano", category: "apprentissage" },
 ];
+
+// Anciens noms d'activités renommées : les envies et la grille déjà enregistrées
+// sont lues sous le nouveau nom (voir Storage), sans modifier la base.
+const RENAMED_ACTIVITIES = {
+  "Marche dans le quartier": "Promenade",
+  "Tricot ou crochet": "Tricot/Crochet",
+  "Film ou épisode choisi à l'avance": "Film/Série",
+  "Avancer ma to-do list": TODO_ACTIVITY,
+};
+
+function currentActivityName(name) {
+  return RENAMED_ACTIVITIES[name] || name;
+}
 
 const NEEDS = [
   { id: "souffler", label: "Souffler", short: "souffler" },
@@ -47,10 +59,10 @@ const NEEDS = [
 // Idées proposées pour chaque besoin, de la plus évidente à la moins évidente.
 // Les activités ajoutées à la main rejoignent ces listes selon leur catégorie.
 const NEED_SUGGESTIONS = {
-  souffler: [BREATHING, "Rien du tout sur le canapé (sans écran)", "Longue douche chaude", "Album ou podcast", "Yoga/Pilates"],
-  occuper: ["Mots fléchés", "Sudoku", "Tricot ou crochet", "Lecture", "Cuisiner", "Échecs", "Piano", "Couture"],
-  decrocher: ["Marche dans le quartier", "Longue douche chaude", "Course à pied", "Cuisiner", "Album ou podcast", "Vélo"],
-  reflexe: [BREATHING, "Marche dans le quartier", TODO_ACTIVITY, "Lecture", "Rien du tout sur le canapé (sans écran)"],
+  souffler: [BREATHING, "Méditation", "Skincare", "Promenade", "Yoga/Pilates"],
+  occuper: ["Mots fléchés", "Sudoku", "Tricot/Crochet", "Lecture", "Échecs", "Piano", "Couture"],
+  decrocher: ["Promenade", "Course à pied", "Vélo", "Natation", "Skincare", "Film/Série"],
+  reflexe: [BREATHING, "Promenade", TODO_ACTIVITY, "Méditation", "Lecture"],
 };
 
 const NEED_CUSTOM_CATEGORIES = {
@@ -72,7 +84,10 @@ const RACE_DISCIPLINES = ["Course à pied", "Trail", "Triathlon", "Vélo", "Nata
 
 const Activities = {
   all() {
-    const custom = Storage.getActivities().map((a) => ({ name: a.name, category: a.category }));
+    const known = new Set(DEFAULT_ACTIVITIES.map((a) => a.name.toLowerCase()));
+    const custom = Storage.getActivities()
+      .filter((a) => !known.has(a.name.toLowerCase()))
+      .map((a) => ({ name: a.name, category: a.category }));
     return [...DEFAULT_ACTIVITIES, ...custom];
   },
 
@@ -81,7 +96,6 @@ const Activities = {
   },
 
   categoryOf(name) {
-    if (name === BREATHING) return "detente";
     const found = Activities.all().find((a) => a.name === name);
     return found ? found.category : "detente";
   },
