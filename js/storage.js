@@ -313,6 +313,31 @@ const Storage = (() => {
     if (data !== null) removeFrom("tasks", id);
   }
 
+  // ---- Calendrier iPhone (lien secret d'abonnement) ----
+
+  async function getCalendarToken() {
+    const data = await run(
+      supabaseClient.from("pause_calendar_tokens").select("token").eq("user_id", userId).maybeSingle(),
+      "lecture du lien de calendrier"
+    );
+    return data && data.token ? data.token : null;
+  }
+
+  async function createCalendarToken() {
+    const data = await run(
+      supabaseClient.from("pause_calendar_tokens").insert({ user_id: userId }).select("token").single(),
+      "création du lien de calendrier"
+    );
+    return data ? data.token : null;
+  }
+
+  // Un nouveau lien rend l'ancien inutilisable (abonnement à refaire).
+  async function resetCalendarToken() {
+    const deleted = await run(supabaseClient.from("pause_calendar_tokens").delete().eq("user_id", userId), "réinitialisation du lien");
+    if (deleted === null) return null;
+    return createCalendarToken();
+  }
+
   return {
     refresh,
     getActivities,
@@ -337,5 +362,8 @@ const Storage = (() => {
     addTask,
     updateTask,
     deleteTask,
+    getCalendarToken,
+    createCalendarToken,
+    resetCalendarToken,
   };
 })();

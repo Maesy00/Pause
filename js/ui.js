@@ -36,6 +36,7 @@ const ICONS = {
   briefcase: '<rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5M3.5 12.5h17"/>',
   phone: '<rect x="7" y="3" width="10" height="18" rx="2.6"/><path d="M11 18h2"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  calendar: '<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>',
 };
 
 const NEED_ICONS = { souffler: "wind", occuper: "sparkle", decrocher: "briefcase", reflexe: "phone" };

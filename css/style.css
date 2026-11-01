@@ -1754,6 +1754,50 @@ button {
   height: 17px;
 }
 
+/* --- Calendrier iPhone --- */
+
+.calendar-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  transition: transform 0.2s var(--spring);
+}
+
+.calendar-card:active {
+  transform: scale(0.98);
+}
+
+.calendar-card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.calendar-card-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.calendar-card-caption {
+  font-size: 14px;
+  color: var(--label-2);
+}
+
+.sheet-intro {
+  margin: 4px 4px 8px;
+  font-size: 15px;
+  color: var(--label-2);
+  line-height: 1.4;
+}
+
+a.btn {
+  text-decoration: none;
+}
+
 /* --- Mes défis --- */
 
 .cards {

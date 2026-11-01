@@ -112,3 +112,45 @@ create policy "pause_tasks_select_own" on pause_tasks for select using (auth.uid
 create policy "pause_tasks_insert_own" on pause_tasks for insert with check (auth.uid() = user_id);
 create policy "pause_tasks_update_own" on pause_tasks for update using (auth.uid() = user_id);
 create policy "pause_tasks_delete_own" on pause_tasks for delete using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- Calendrier iPhone : abonnement aux séances de sport et aux courses.
+-- Chaque utilisateur a un lien secret (token). Le calendrier de l'iPhone
+-- ne peut pas se connecter : c'est ce lien qui donne accès au flux, et
+-- uniquement aux séances de sport et aux courses.
+
+create table if not exists pause_calendar_tokens (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  token text not null unique default encode(gen_random_bytes(24), 'hex'),
+  created_at timestamptz not null default now()
+);
+
+alter table pause_calendar_tokens enable row level security;
+
+create policy "pause_calendar_tokens_select_own" on pause_calendar_tokens for select using (auth.uid() = user_id);
+create policy "pause_calendar_tokens_insert_own" on pause_calendar_tokens for insert with check (auth.uid() = user_id);
+create policy "pause_calendar_tokens_delete_own" on pause_calendar_tokens for delete using (auth.uid() = user_id);
+
+-- Contenu du calendrier pour un lien donné. "security definer" : la fonction
+-- lit les tables sans connexion, mais seulement pour le titulaire du lien,
+-- et seulement le sport planifié (60 derniers jours et à venir) et les courses.
+create or replace function pause_calendar_feed(feed_token text)
+returns table (kind text, id uuid, date date, slot text, title text, status text)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select 'plan', p.id, p.date, p.slot, p.activity, p.status
+  from pause_plans p
+  join pause_calendar_tokens t on t.user_id = p.user_id
+  where t.token = feed_token and p.category = 'sport' and p.date >= current_date - 60
+  union all
+  select 'race', c.id, c.race_date, null, c.name, null
+  from pause_challenges c
+  join pause_calendar_tokens t on t.user_id = c.user_id
+  where t.token = feed_token and c.kind = 'race' and c.race_date is not null
+$$;
+
+revoke all on function pause_calendar_feed(text) from public;
+grant execute on function pause_calendar_feed(text) to anon, authenticated;

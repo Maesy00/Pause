@@ -53,6 +53,17 @@ const Week = (() => {
         <h3 class="group-header">Bilan de la semaine</h3>
         <div class="card" id="week-summary"></div>
       </section>
+      <section class="group">
+        <h3 class="group-header">Calendrier iPhone</h3>
+        <button type="button" class="card calendar-card" id="calendar-card">
+          ${categoryBadge("sport", "calendar")}
+          <span class="calendar-card-text">
+            <span class="calendar-card-title">Sport dans Calendrier</span>
+            <span class="calendar-card-caption">Tes séances de sport et tes courses, mises à jour automatiquement.</span>
+          </span>
+          <span class="row-chevron">${icon("chevronRight")}</span>
+        </button>
+      </section>
     `;
 
     renderToValidate(panel.querySelector("#week-validate-group"), panel.querySelector("#week-validate"));
@@ -60,6 +71,7 @@ const Week = (() => {
     renderGrid(panel.querySelector("#week-grid"), days);
     renderSummary(panel.querySelector("#week-summary"), days);
 
+    panel.querySelector("#calendar-card").addEventListener("click", openCalendar);
     panel.querySelector("#week-prev").addEventListener("click", () => moveWeek(-7));
     panel.querySelector("#week-next").addEventListener("click", () => moveWeek(7));
     const current = panel.querySelector("#week-current");
@@ -270,6 +282,69 @@ const Week = (() => {
         });
       },
     });
+  }
+
+  /* --- Calendrier iPhone --- */
+
+  // Le lien est créé au premier affichage, puis réutilisé.
+  function openCalendar() {
+    let token;
+    let loading = true;
+    let closed = false;
+
+    const calendarSheet = Sheet.open({
+      title: "Calendrier iPhone",
+      onClose: () => (closed = true),
+      render(body, sheet) {
+        if (loading) {
+          body.appendChild(html(`<p class="muted">Préparation du lien…</p>`));
+          return;
+        }
+        if (!token) {
+          body.appendChild(html(`<p class="muted">Le lien n'a pas pu être créé. Vérifie ta connexion et réessaie.</p>`));
+          return;
+        }
+        const httpsUrl = `${CALENDAR_FEED_URL}?token=${token}`;
+        const webcalUrl = httpsUrl.replace(/^https:/, "webcal:");
+        const content = html(`
+          <div>
+            <p class="sheet-intro">Abonne-toi une fois : chaque séance de sport planifiée dans Ma semaine, et chacune de tes courses, apparaîtra dans l'app Calendrier, sans alerte.</p>
+            <a class="btn btn-primary btn-block" href="${webcalUrl}">${icon("calendar", "icon icon-inline")} S'abonner dans Calendrier</a>
+            <button type="button" class="btn btn-secondary btn-block" data-action="copy">Copier le lien</button>
+            <section class="group">
+              <h3 class="group-header">Bon à savoir</h3>
+              <div class="list">
+                <div class="row"><span class="row-label">Matin : 7 h – 11 h · Midi : 12 h – 14 h<br>Après-midi : 14 h – 18 h · Soir : 18 h – 21 h</span></div>
+                <div class="row"><span class="row-label">L'iPhone actualise le calendrier toutes les heures environ (Réglages → Calendrier → Comptes).</span></div>
+                <div class="row"><span class="row-label">Ce lien est personnel : il donne accès à tes séances de sport et tes courses, et à rien d'autre.</span></div>
+              </div>
+            </section>
+            <button type="button" class="btn btn-quiet btn-block" data-action="reset">Créer un nouveau lien</button>
+          </div>
+        `);
+        content.querySelector('[data-action="copy"]').addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(webcalUrl);
+            showToast("Lien copié.");
+          } catch {
+            prompt("Copie ce lien :", webcalUrl);
+          }
+        });
+        content.querySelector('[data-action="reset"]').addEventListener("click", async () => {
+          if (!confirm("Créer un nouveau lien\u00a0? L'ancien abonnement cessera de se mettre à jour : il faudra te réabonner.")) return;
+          token = await Storage.resetCalendarToken();
+          sheet.rerender();
+          if (token) showToast("Nouveau lien créé.");
+        });
+        body.appendChild(content);
+      },
+    });
+
+    (async () => {
+      token = (await Storage.getCalendarToken()) || (await Storage.createCalendarToken());
+      loading = false;
+      if (!closed) calendarSheet.rerender();
+    })();
   }
 
   /* --- Bilan --- */
