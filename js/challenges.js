@@ -70,7 +70,7 @@ const Challenges = (() => {
         : `${Rules.daysLabel(Rules.practiceCount(challenge))} · terminé le ${DateUtil.short(Rules.archiveDate(challenge))}`;
       archiveList.appendChild(html(`
         <div class="row">
-          ${categoryDot(challenge.kind === "race" ? "sport" : "apprentissage")}
+          ${categoryBadge(challenge.kind === "race" ? "sport" : "apprentissage", challenge.kind === "race" ? "flag" : "apprentissage", "sm")}
           <div class="plan-row-text">
             <span class="row-label">${escapeHtml(challenge.name)}</span>
             <span class="row-detail">${detail}</span>
@@ -121,7 +121,7 @@ const Challenges = (() => {
           App.renderAll();
         });
         form.querySelector('[data-action="delete"]').addEventListener("click", async () => {
-          if (!confirm("Supprimer définitivement cette course ?")) return;
+          if (!confirm("Supprimer définitivement cette course ?")) return;
           await Storage.deleteChallenge(race.id);
           sheet.close();
           App.renderAll();
@@ -171,7 +171,7 @@ const Challenges = (() => {
           sheet.rerender();
         });
         content.querySelector('[data-action="finish"]').addEventListener("click", async () => {
-          if (!confirm(`Terminer le défi « ${challenge.name} » ? Il rejoindra les archives avec ses ${Rules.daysLabel(days.length)}.`)) return;
+          if (!confirm(`Terminer le défi « ${challenge.name} » ? Il rejoindra les archives avec ses ${Rules.daysLabel(days.length)}.`)) return;
           await Storage.updateChallenge(challenge.id, { archivedAt: new Date().toISOString() });
           sheet.close();
           App.renderAll();

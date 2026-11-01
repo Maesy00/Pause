@@ -13,16 +13,23 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Pause">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F5F4FB" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B0B14" media="(prefers-color-scheme: dark)">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <div class="backdrop" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <span class="blob blob-3"></span>
+  </div>
+
   <div id="auth-gate" hidden>
     <div class="auth-card">
       <img class="auth-logo" src="images/icon-192.png" alt="" width="72" height="72">
+      <p class="auth-brand">Pause</p>
       <h1 id="auth-title">Connexion</h1>
-      <p class="auth-subtitle">Le même compte que pour Aurora.</p>
+      <p class="auth-subtitle">Un instant pour toi, avant de scroller.</p>
 
       <form id="auth-form">
         <div class="list">
@@ -35,7 +42,7 @@
       </form>
 
       <p class="auth-switch">
-        <span id="auth-switch-text">Pas encore de compte ?</span>
+        <span id="auth-switch-text">Pas encore de compte ?</span>
         <button type="button" class="link-button" id="auth-toggle-mode">Créer un compte</button>
       </p>
     </div>

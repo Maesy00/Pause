@@ -1,7 +1,8 @@
 /*
  * ui.js — composants d'interface façon iOS partagés par les onglets :
- * feuille qui monte du bas (Sheet), contrôle segmenté, toast, choix
- * d'une activité, aperçu de 3 tâches, respiration guidée.
+ * feuille qui monte du bas (Sheet), fenêtre de question (Dialog),
+ * contrôle segmenté, toast, pastilles de catégorie, choix d'une
+ * activité, aperçu de 3 tâches, respiration guidée.
  */
 
 function escapeHtml(text) {
@@ -27,14 +28,28 @@ const ICONS = {
   flag: '<path d="M5.5 21V4"/><path d="M5.5 4.5h11l-2.2 4 2.2 4h-11"/>',
   sparkle: '<path d="M12 3.5l1.8 5.2 5.2 1.8-5.2 1.8L12 17.5l-1.8-5.2-5.2-1.8 5.2-1.8z"/>',
   wind: '<path d="M3.5 9h10a3 3 0 1 0-3-3"/><path d="M3.5 13h14a3 3 0 1 1-3 3"/><path d="M3.5 17h6"/>',
+  sport: '<path d="M3 12h4l2.2-5.5 4.6 11 2.2-5.5h5"/>',
+  detente: '<path d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/>',
+  apprentissage: '<path d="M12 6.6c-2.2-1.6-5.1-2-8-1.6v13c2.9-.4 5.8 0 8 1.6 2.2-1.6 5.1-2 8-1.6V5c-2.9-.4-5.8 0-8 1.6z"/><path d="M12 6.6v13"/>',
+  briefcase: '<rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5M3.5 12.5h17"/>',
+  phone: '<rect x="7" y="3" width="10" height="18" rx="2.6"/><path d="M11 18h2"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
 };
+
+const NEED_ICONS = { souffler: "wind", occuper: "sparkle", decrocher: "briefcase", reflexe: "phone" };
 
 function icon(name, className = "icon") {
   return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 }
 
-function categoryDot(category) {
-  return `<span class="dot dot-${category}" aria-hidden="true"></span>`;
+// Pastille carrée aux couleurs de la catégorie, avec son pictogramme (façon app Santé).
+function categoryBadge(category, iconName = category, size = "") {
+  return `<span class="badge badge-${category}${size ? ` badge-${size}` : ""}" aria-hidden="true">${icon(iconName)}</span>`;
+}
+
+function activityBadge(name, size = "") {
+  const category = Activities.categoryOf(name);
+  return categoryBadge(category, name === BREATHING ? "wind" : category, size);
 }
 
 /* --- Toast : petit message doux en bas de l'écran --- */
@@ -50,15 +65,18 @@ function showToast(message) {
   toastTimer = setTimeout(() => {
     toast.classList.remove("visible");
     setTimeout(() => (toast.hidden = true), 250);
-  }, 2600);
+  }, 2800);
 }
 
-/* --- Feuille qui monte du bas de l'écran --- */
+/* --- Feuille qui monte du bas de l'écran ---
+ * leading  : bouton à gauche, ex. { label: "Annuler", onClick } (aucun par défaut)
+ * trailing : libellé du bouton de droite qui ferme la feuille ("OK"), ou null
+ */
 
 const Sheet = (() => {
   let current = null;
 
-  function open({ title, render, onClose }) {
+  function open({ title, render, onClose, leading = null, trailing = "OK" }) {
     if (current) close(true);
 
     const overlay = html(`
@@ -66,8 +84,9 @@ const Sheet = (() => {
         <div class="sheet" role="dialog" aria-modal="true" aria-label="${escapeHtml(title)}">
           <div class="sheet-grabber" aria-hidden="true"></div>
           <header class="sheet-header">
+            <div class="sheet-header-side">${leading ? `<button type="button" class="sheet-button sheet-leading">${escapeHtml(leading.label)}</button>` : ""}</div>
             <h2 class="sheet-title">${escapeHtml(title)}</h2>
-            <button type="button" class="sheet-close">OK</button>
+            <div class="sheet-header-side sheet-header-end">${trailing ? `<button type="button" class="sheet-button sheet-close">${escapeHtml(trailing)}</button>` : ""}</div>
           </header>
           <div class="sheet-body"></div>
         </div>
@@ -82,8 +101,13 @@ const Sheet = (() => {
         overlay.querySelector(".sheet-title").textContent = text;
       },
       rerender() {
+        const scroll = body.scrollTop;
         body.innerHTML = "";
         render(body, instance);
+        body.scrollTop = scroll;
+      },
+      scrollTop() {
+        body.scrollTop = 0;
       },
       close: () => close(),
       onClose,
@@ -92,7 +116,10 @@ const Sheet = (() => {
     overlay.addEventListener("click", (event) => {
       if (event.target === overlay) close();
     });
-    overlay.querySelector(".sheet-close").addEventListener("click", () => close());
+    const closeBtn = overlay.querySelector(".sheet-close");
+    if (closeBtn) closeBtn.addEventListener("click", () => close());
+    const leadingBtn = overlay.querySelector(".sheet-leading");
+    if (leadingBtn) leadingBtn.addEventListener("click", () => leading.onClick(instance));
     enableDragToClose(sheet);
 
     document.getElementById("sheet-root").appendChild(overlay);
@@ -147,6 +174,50 @@ const Sheet = (() => {
   return { open, close, isOpen: () => current !== null };
 })();
 
+/* --- Fenêtre de question au centre de l'écran (façon alerte iOS) ---
+ * actions : [{ label, style: "primary" | "secondary" | "quiet", onClick }]
+ */
+
+const Dialog = (() => {
+  let current = null;
+
+  function open({ eyebrow = "", title, message = "", actions }) {
+    if (current) return;
+    const overlay = html(`
+      <div class="dialog-overlay">
+        <div class="dialog" role="alertdialog" aria-modal="true" aria-label="${escapeHtml(title)}">
+          ${eyebrow ? `<p class="dialog-eyebrow">${escapeHtml(eyebrow)}</p>` : ""}
+          <h2 class="dialog-title">${escapeHtml(title)}</h2>
+          ${message ? `<p class="dialog-message">${message}</p>` : ""}
+          <div class="dialog-actions"></div>
+        </div>
+      </div>
+    `);
+    const slot = overlay.querySelector(".dialog-actions");
+    actions.forEach((action) => {
+      const btn = html(`<button type="button" class="btn btn-${action.style || "secondary"} btn-block">${escapeHtml(action.label)}</button>`);
+      btn.addEventListener("click", async () => {
+        close();
+        if (action.onClick) await action.onClick();
+      });
+      slot.appendChild(btn);
+    });
+    document.body.appendChild(overlay);
+    current = overlay;
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("open")));
+  }
+
+  function close() {
+    if (!current) return;
+    const overlay = current;
+    current = null;
+    overlay.classList.remove("open");
+    setTimeout(() => overlay.remove(), 250);
+  }
+
+  return { open, isOpen: () => current !== null };
+})();
+
 /* --- Contrôle segmenté iOS --- */
 
 function segmented(options, value, onChange, { small = false } = {}) {
@@ -168,18 +239,21 @@ function segmented(options, value, onChange, { small = false } = {}) {
 
 /* --- Choix d'une activité (liste groupée par catégorie + ajout) --- */
 
-function renderActivityPicker(container, { categories = CATEGORY_ORDER, onPick, selected = null }) {
+function renderActivityPicker(container, { categories = CATEGORY_ORDER, onPick, selected = null, withBreathing = false }) {
   categories.forEach((category) => {
     const group = html(`
       <section class="group">
-        <h3 class="group-header">${categoryDot(category)}${CATEGORIES[category].label}</h3>
+        <h3 class="group-header">${CATEGORIES[category].label}</h3>
         <div class="list"></div>
       </section>
     `);
     const list = group.querySelector(".list");
-    Activities.byCategory(category).forEach((activity) => {
+    const activities = Activities.byCategory(category);
+    if (withBreathing && category === "detente") activities.unshift({ name: BREATHING, category: "detente" });
+    activities.forEach((activity) => {
       const row = html(`
         <button type="button" class="row row-button">
+          ${activityBadge(activity.name, "sm")}
           <span class="row-label">${escapeHtml(activity.name)}</span>
           ${activity.name === selected ? `<span class="row-check">${icon("check")}</span>` : ""}
         </button>
@@ -219,7 +293,7 @@ function renderActivityPicker(container, { categories = CATEGORY_ORDER, onPick, 
     event.preventDefault();
     const name = form.elements.name.value.trim();
     if (!name) return;
-    if (Activities.all().some((a) => a.name.toLowerCase() === name.toLowerCase())) {
+    if (name === BREATHING || Activities.all().some((a) => a.name.toLowerCase() === name.toLowerCase())) {
       showToast("Cette activité existe déjà.");
       return;
     }
@@ -276,12 +350,13 @@ const Breathing = (() => {
     const overlay = html(`
       <div class="breathing" role="dialog" aria-label="Respiration guidée">
         <div class="breathing-stage">
+          <div class="breathing-halo"></div>
           <div class="breathing-circle"></div>
           <p class="breathing-label" aria-live="polite">Inspire</p>
         </div>
         <p class="breathing-time">3:00</p>
         <div class="breathing-actions">
-          <button type="button" class="btn btn-secondary btn-block breathing-stop">Terminer</button>
+          <button type="button" class="btn btn-glass btn-block breathing-stop">Terminer</button>
         </div>
       </div>
     `);
@@ -304,7 +379,7 @@ const Breathing = (() => {
       clearInterval(timer);
       overlay.classList.remove("open");
       setTimeout(() => overlay.remove(), 300);
-      onEnd(completed);
+      if (onEnd) onEnd(completed);
     }
 
     overlay.querySelector(".breathing-stop").addEventListener("click", () => finish(false));

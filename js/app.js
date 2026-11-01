@@ -38,6 +38,7 @@ const App = (() => {
     Home.onReopen();
     renderAll();
     go("home");
+    Home.promptPending();
   }
 
   tabButtons.forEach((btn) => btn.addEventListener("click", () => go(btn.dataset.tab)));
@@ -58,6 +59,7 @@ const App = (() => {
     await Storage.refresh();
     if (away > 5 * 60 * 1000 && !Sheet.isOpen()) go("home");
     renderAll();
+    Home.promptPending();
   });
 
   return { start, go, renderAll };

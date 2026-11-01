@@ -92,7 +92,7 @@ const Week = (() => {
       const row = html(`
         <div class="row plan-row status-${plan.status || "none"}">
           <div class="plan-row-main">
-            ${categoryDot(plan.category)}
+            ${activityBadge(plan.activity, "sm")}
             <div class="plan-row-text">
               <span class="row-label">${escapeHtml(plan.activity)}</span>
               <span class="row-detail">${slot.label}</span>
@@ -147,7 +147,7 @@ const Week = (() => {
       SLOTS.forEach((slot) => {
         const plan = Storage.planAt(date, slot.id);
         const cell = html(`
-          <button type="button" class="grid-cell${plan ? ` cat-${plan.category} status-${plan.status || "none"}` : ""}"
+          <button type="button" class="grid-cell${plan ? ` cat-${plan.category} status-${plan.status || "none"}` : " is-empty"}"
             aria-label="${escapeHtml(`${DateUtil.long(date)}, ${slot.label} : ${plan ? plan.activity : "libre"}`)}">
             ${plan ? `<span class="grid-cell-text">${escapeHtml(plan.activity)}</span>${plan.status === "done" ? `<span class="grid-cell-check">${icon("check")}</span>` : ""}` : ""}
           </button>
@@ -173,7 +173,7 @@ const Week = (() => {
             <div>
               <div class="list">
                 <div class="row">
-                  ${categoryDot(plan.category)}
+                  ${activityBadge(plan.activity, "sm")}
                   <span class="row-label">${escapeHtml(plan.activity)}</span>
                   <span class="row-value">${CATEGORIES[plan.category].label}</span>
                 </div>
@@ -250,7 +250,7 @@ const Week = (() => {
       ${ranking.length ? `
         <h4 class="card-subtitle">Ce qui tient le mieux</h4>
         <ul class="plain-list">
-          ${ranking.map((a) => `<li>${categoryDot(a.category)}<span class="row-label">${escapeHtml(a.name)}</span><span class="row-value tabular">${a.done}/${a.planned}</span></li>`).join("")}
+          ${ranking.map((a) => `<li>${activityBadge(a.name, "sm")}<span class="row-label">${escapeHtml(a.name)}</span><span class="row-value tabular">${a.done}/${a.planned}</span></li>`).join("")}
         </ul>` : ""}
     `;
   }

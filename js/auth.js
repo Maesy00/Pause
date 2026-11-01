@@ -28,13 +28,13 @@ function setAuthMode(mode) {
   if (mode === "signin") {
     authTitle.textContent = "Connexion";
     authSubmitBtn.textContent = "Se connecter";
-    authSwitchText.textContent = "Pas encore de compte ?";
+    authSwitchText.textContent = "Pas encore de compte ?";
     authToggleBtn.textContent = "Créer un compte";
     authPassword.autocomplete = "current-password";
   } else {
     authTitle.textContent = "Créer un compte";
     authSubmitBtn.textContent = "Créer mon compte";
-    authSwitchText.textContent = "Déjà un compte ?";
+    authSwitchText.textContent = "Déjà un compte ?";
     authToggleBtn.textContent = "Se connecter";
     authPassword.autocomplete = "new-password";
   }

@@ -49,20 +49,6 @@ const Rules = (() => {
     return `${count} jour${count > 1 ? "s" : ""}`;
   }
 
-  // Le défi le plus proche pour la ligne de l'accueil : la prochaine course,
-  // sinon l'apprentissage le plus pratiqué.
-  function nearestChallengeLine() {
-    const race = activeRaces()[0];
-    if (race) return { kind: "race", text: `${shortRaceName(race.name)} · ${countdownLabel(race)}` };
-    const learning = activeLearnings().sort((a, b) => practiceCount(b) - practiceCount(a))[0];
-    if (learning) return { kind: "learning", text: `${learning.name} · ${daysLabel(practiceCount(learning))}` };
-    return null;
-  }
-
-  function shortRaceName(name) {
-    return name.split(",")[0].trim();
-  }
-
   function racesOn(date) {
     return Storage.getChallenges().filter((c) => c.kind === "race" && c.raceDate === date);
   }
@@ -154,7 +140,6 @@ const Rules = (() => {
     countdownLabel,
     practiceCount,
     daysLabel,
-    nearestChallengeLine,
     racesOn,
     afterPlanStatusChange,
     syncTodoActivity,

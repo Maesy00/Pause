@@ -104,7 +104,7 @@ const Todo = (() => {
           App.renderAll();
         });
         form.querySelector('[data-action="delete"]').addEventListener("click", async () => {
-          if (!confirm("Supprimer définitivement cette tâche ?")) return;
+          if (!confirm("Supprimer définitivement cette tâche ?")) return;
           await Storage.deleteTask(task.id);
           sheet.close();
           App.renderAll();

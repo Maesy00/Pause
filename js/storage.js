@@ -98,6 +98,7 @@ const Storage = (() => {
       tasks: tasks.map(rowToTask),
     };
 
+    sortCravings();
     if (results.every((r) => r.length === 0)) await seedFirstUse();
     await archiveOldTasks();
   }
@@ -146,26 +147,49 @@ const Storage = (() => {
     return cache.cravings;
   }
 
-  async function addCraving({ need, suggestion }) {
+  // L'envie n'est enregistrée qu'une fois l'alternative choisie (« Annuler » n'enregistre rien),
+  // mais avec l'heure de l'appui sur le bouton.
+  async function addCraving({ need, suggestion, createdAt }) {
     const data = await run(
-      supabaseClient.from("pause_cravings").insert({ user_id: userId, need, suggestion }).select().single(),
+      supabaseClient
+        .from("pause_cravings")
+        .insert({ user_id: userId, need, suggestion, created_at: createdAt || new Date().toISOString() })
+        .select()
+        .single(),
       "enregistrement de l'envie"
     );
     if (!data) return null;
     const craving = rowToCraving(data);
     replaceIn("cravings", craving);
+    sortCravings();
     return craving;
   }
 
-  async function updateCraving(id, { suggestion, outcome }) {
+  // outcome : "passed", "scrolled", ou null pour « pas encore de réponse ».
+  async function updateCraving(id, { need, suggestion, outcome, createdAt }) {
     const fields = {};
+    if (need !== undefined) fields.need = need;
     if (suggestion !== undefined) fields.suggestion = suggestion;
+    if (createdAt !== undefined) fields.created_at = createdAt;
     if (outcome !== undefined) {
+      const current = cache.cravings.find((c) => c.id === id);
       fields.outcome = outcome;
-      fields.answered_at = new Date().toISOString();
+      if (!current || current.outcome !== outcome) fields.answered_at = outcome ? new Date().toISOString() : null;
     }
     const data = await run(supabaseClient.from("pause_cravings").update(fields).eq("id", id).select().single(), "mise à jour de l'envie");
-    if (data) replaceIn("cravings", rowToCraving(data));
+    if (!data) return null;
+    replaceIn("cravings", rowToCraving(data));
+    sortCravings();
+    return data;
+  }
+
+  async function deleteCraving(id) {
+    const data = await run(supabaseClient.from("pause_cravings").delete().eq("id", id), "suppression de l'envie");
+    if (data !== null) removeFrom("cravings", id);
+  }
+
+  function sortCravings() {
+    cache.cravings.sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
   }
 
   // ---- Grille de la semaine ----
@@ -296,6 +320,7 @@ const Storage = (() => {
     getCravings,
     addCraving,
     updateCraving,
+    deleteCraving,
     getPlans,
     planAt,
     setPlan,
