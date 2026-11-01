@@ -60,11 +60,12 @@ const NEED_CUSTOM_CATEGORIES = {
   reflexe: ["detente"],
 };
 
+// end : heure de fin du créneau (29 = 5 h du matin le lendemain, la soirée court jusque-là).
 const SLOTS = [
-  { id: "matin", label: "Matin", short: "Matin", reminder: "Ce matin" },
-  { id: "midi", label: "Midi", short: "Midi", reminder: "Ce midi" },
-  { id: "apres_midi", label: "Après-midi", short: "Aprèm", reminder: "Cet après-midi" },
-  { id: "soir", label: "Soir", short: "Soir", reminder: "Ce soir" },
+  { id: "matin", label: "Matin", short: "Matin", reminder: "Ce matin", end: 11 },
+  { id: "midi", label: "Midi", short: "Midi", reminder: "Ce midi", end: 14 },
+  { id: "apres_midi", label: "Après-midi", short: "Aprèm", reminder: "Cet après-midi", end: 18 },
+  { id: "soir", label: "Soir", short: "Soir", reminder: "Ce soir", end: 29 },
 ];
 
 const RACE_DISCIPLINES = ["Course à pied", "Trail", "Triathlon", "Vélo", "Natation", "Duathlon", "Swimrun"];

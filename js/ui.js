@@ -22,6 +22,8 @@ function html(markup) {
 
 const ICONS = {
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  close: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  alert: '<path d="M12 6v8"/><path d="M12 18.2v.1"/>',
   chevronRight: '<path d="M9 5.5l6.5 6.5L9 18.5"/>',
   chevronLeft: '<path d="M15 5.5L8.5 12l6.5 6.5"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',

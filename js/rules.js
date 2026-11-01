@@ -53,6 +53,31 @@ const Rules = (() => {
     return Storage.getChallenges().filter((c) => c.kind === "race" && c.raceDate === date);
   }
 
+  /* --- État des activités planifiées --- */
+
+  function slotHasEnded(date, slotId, now = new Date()) {
+    const end = DateUtil.fromKey(date);
+    end.setHours(SLOTS.find((s) => s.id === slotId).end);
+    return now >= end;
+  }
+
+  // "done" : faite · "missed" : créneau passé sans être validée (ou marquée « Pas fait ») ·
+  // "upcoming" : pas encore passée.
+  function planState(plan) {
+    if (plan.status === "done") return "done";
+    if (plan.status === "not_done" || slotHasEnded(plan.date, plan.slot)) return "missed";
+    return "upcoming";
+  }
+
+  // Activités passées qui attendent une réponse (sur les 14 derniers jours).
+  function plansToValidate() {
+    const since = DateUtil.addDays(DateUtil.today(), -14);
+    const order = SLOTS.map((s) => s.id);
+    return Storage.getPlans()
+      .filter((p) => !p.status && p.date >= since && slotHasEnded(p.date, p.slot))
+      .sort((a, b) => (a.date === b.date ? order.indexOf(a.slot) - order.indexOf(b.slot) : a.date < b.date ? -1 : 1));
+  }
+
   /* --- Automatismes « Fait » --- */
 
   // Après un changement de statut dans Ma semaine : un apprentissage marqué
@@ -141,6 +166,8 @@ const Rules = (() => {
     practiceCount,
     daysLabel,
     racesOn,
+    planState,
+    plansToValidate,
     afterPlanStatusChange,
     syncTodoActivity,
     successRate,

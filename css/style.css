@@ -44,6 +44,9 @@
   --apprentissage-ink: #B85E26;
   --need-1: #C3B6FF;
   --need-2: #9EC3FF;
+  --missed: #E5484D;
+  --missed-soft: rgba(229, 72, 77, 0.13);
+  --missed-ink: #C4272E;
 
   --blob-1: #C9BEFF;
   --blob-2: #A9DAFF;
@@ -89,6 +92,9 @@
     --apprentissage-ink: #FFC08F;
     --need-1: #6C5FD6;
     --need-2: #3F78C9;
+    --missed: #FF6369;
+    --missed-soft: rgba(255, 99, 105, 0.18);
+    --missed-ink: #FF8A8F;
 
     --blob-1: #3B2E91;
     --blob-2: #1B4F84;
@@ -1519,13 +1525,40 @@ button {
   opacity: 1;
 }
 
-.grid-cell.cat-sport { background: var(--sport-soft); color: var(--sport-ink); }
-.grid-cell.cat-detente { background: var(--detente-soft); color: var(--detente-ink); }
-.grid-cell.cat-apprentissage { background: var(--apprentissage-soft); color: var(--apprentissage-ink); }
+.grid-cell.state-upcoming {
+  background: var(--card-solid);
+  color: var(--label);
+  box-shadow: inset 0 0 0 1px var(--separator);
+}
 
-.grid-cell.status-done.cat-sport { background: linear-gradient(140deg, var(--sport-1), var(--sport-2)); color: #FFFFFF; }
-.grid-cell.status-done.cat-detente { background: linear-gradient(140deg, var(--detente-1), var(--detente-2)); color: #FFFFFF; }
-.grid-cell.status-done.cat-apprentissage { background: linear-gradient(140deg, var(--apprentissage-1), var(--apprentissage-2)); color: #FFFFFF; }
+.grid-cell.state-done { color: #FFFFFF; }
+.grid-cell.state-done.cat-sport { background: linear-gradient(140deg, var(--sport-1), var(--sport-2)); }
+.grid-cell.state-done.cat-detente { background: linear-gradient(140deg, var(--detente-1), var(--detente-2)); }
+.grid-cell.state-done.cat-apprentissage { background: linear-gradient(140deg, var(--apprentissage-1), var(--apprentissage-2)); }
+
+.grid-cell.state-missed {
+  background: var(--missed-soft);
+  color: var(--missed-ink);
+  box-shadow: inset 0 0 0 1px rgba(229, 72, 77, 0.35);
+}
+
+/* Petit point de catégorie, pour garder la catégorie visible tant que l'activité n'est pas faite. */
+.grid-cell-dot {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.grid-cell.state-done .grid-cell-dot {
+  display: none;
+}
+
+.dot-sport { background: var(--sport-2); }
+.dot-detente { background: var(--detente-1); }
+.dot-apprentissage { background: var(--apprentissage-2); }
 
 .grid-cell-text {
   font-size: 11px;
@@ -1539,30 +1572,55 @@ button {
   hyphens: auto;
 }
 
-.grid-cell-check {
+.grid-cell-mark {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 17px;
-  height: 17px;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--card-solid);
-  color: var(--sport-ink);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #FFFFFF;
+  box-shadow: 0 0 0 2px var(--card-solid);
 }
 
-.grid-cell-check .icon {
+.grid-cell-mark .icon {
   width: 11px;
   height: 11px;
   stroke-width: 3;
 }
 
-.grid-cell.status-not_done {
-  opacity: 0.5;
+.mark-check { background: var(--sport-2); }
+.mark-close,
+.mark-alert { background: var(--missed); }
+
+.grid-legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--label-2);
 }
+
+.grid-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+}
+
+.legend-upcoming { background: var(--card-solid); box-shadow: inset 0 0 0 1px var(--label-3); }
+.legend-done { background: linear-gradient(140deg, var(--detente-1), var(--sport-2)); }
+.legend-missed { background: var(--missed-soft); box-shadow: inset 0 0 0 1px var(--missed); }
 
 .grid-race {
   margin: 5px 0 0 45px;
@@ -1594,8 +1652,89 @@ button {
   min-width: 0;
 }
 
-.plan-row.status-not_done .row-label {
+.plan-row.state-missed .row-label,
+.plan-row.state-missed .row-detail {
+  color: var(--missed-ink);
+}
+
+.validate-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.validate-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s var(--spring), background-color 0.2s, color 0.2s;
+}
+
+.validate-btn .icon {
+  stroke-width: 2.4;
+}
+
+.validate-btn:active {
+  transform: scale(0.9);
+}
+
+.validate-yes { background: var(--sport-soft); color: var(--sport-ink); }
+.validate-no { background: var(--missed-soft); color: var(--missed-ink); }
+
+.validate-yes.active,
+.validate-row.validated-yes .validate-yes { background: var(--sport-2); color: #FFFFFF; }
+.validate-no.active,
+.validate-row.validated-no .validate-no { background: var(--missed); color: #FFFFFF; }
+
+.validate-row.validated-yes,
+.validate-row.validated-no {
+  animation: task-out 0.3s var(--ease) 0.1s forwards;
+}
+
+.status-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.status-btn {
+  min-height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 650;
+  background: var(--card);
+  border: 0.5px solid var(--card-border);
+  box-shadow: var(--shadow);
   color: var(--label-2);
+  transition: transform 0.2s var(--spring), background 0.2s, color 0.2s;
+}
+
+.status-btn:active {
+  transform: scale(0.97);
+}
+
+.status-btn .icon {
+  stroke-width: 2.4;
+}
+
+.status-btn-done.active {
+  background: linear-gradient(140deg, var(--sport-1), var(--sport-2));
+  color: #FFFFFF;
+  border-color: transparent;
+}
+
+.status-btn-missed.active {
+  background: var(--missed);
+  color: #FFFFFF;
+  border-color: transparent;
 }
 
 .race-flag {

@@ -7,11 +7,6 @@ const Week = (() => {
   const panel = document.getElementById("tab-week");
   let weekStart = DateUtil.weekStart(DateUtil.today());
 
-  const STATUS_OPTIONS = [
-    { value: "done", label: "Fait", toggle: true },
-    { value: "not_done", label: "Pas fait", toggle: true },
-  ];
-
   function weekDays() {
     return Array.from({ length: 7 }, (_, i) => DateUtil.addDays(weekStart, i));
   }
@@ -30,6 +25,10 @@ const Week = (() => {
 
     panel.innerHTML = `
       <header class="page-header"><h1 class="large-title">Ma semaine</h1></header>
+      <section class="group" id="week-validate-group" hidden>
+        <h3 class="group-header">À valider</h3>
+        <div class="list" id="week-validate"></div>
+      </section>
       <section class="group">
         <h3 class="group-header">Aujourd'hui · ${DateUtil.long(today)}</h3>
         <div id="week-today"></div>
@@ -44,6 +43,11 @@ const Week = (() => {
           <button type="button" class="icon-button" id="week-next" aria-label="Semaine suivante">${icon("chevronRight")}</button>
         </div>
         <div class="card week-grid" id="week-grid"></div>
+        <div class="grid-legend">
+          <span><i class="legend-swatch legend-upcoming"></i>Prévue</span>
+          <span><i class="legend-swatch legend-done"></i>Faite</span>
+          <span><i class="legend-swatch legend-missed"></i>Pas faite</span>
+        </div>
       </section>
       <section class="group">
         <h3 class="group-header">Bilan de la semaine</h3>
@@ -51,6 +55,7 @@ const Week = (() => {
       </section>
     `;
 
+    renderToValidate(panel.querySelector("#week-validate-group"), panel.querySelector("#week-validate"));
     renderToday(panel.querySelector("#week-today"));
     renderGrid(panel.querySelector("#week-grid"), days);
     renderSummary(panel.querySelector("#week-summary"), days);
@@ -67,6 +72,39 @@ const Week = (() => {
   function moveWeek(days) {
     weekStart = DateUtil.addDays(weekStart, days);
     render();
+  }
+
+  /* --- À valider : activités passées sans réponse --- */
+
+  function renderToValidate(group, list) {
+    const plans = Rules.plansToValidate();
+    group.hidden = plans.length === 0;
+    plans.forEach((plan) => {
+      const slot = SLOTS.find((s) => s.id === plan.slot);
+      const day = DateUtil.format(plan.date, { weekday: "long", day: "numeric" });
+      const row = html(`
+        <div class="row validate-row">
+          ${activityBadge(plan.activity, "sm")}
+          <div class="plan-row-text">
+            <span class="row-label">${escapeHtml(plan.activity)}</span>
+            <span class="row-detail">${day.charAt(0).toUpperCase() + day.slice(1)} · ${slot.label}</span>
+          </div>
+          <div class="validate-actions">
+            <button type="button" class="validate-btn validate-yes" aria-label="Je l'ai fait">${icon("check")}</button>
+            <button type="button" class="validate-btn validate-no" aria-label="Pas fait">${icon("close")}</button>
+          </div>
+        </div>
+      `);
+      row.querySelector(".validate-yes").addEventListener("click", () => {
+        row.classList.add("validated-yes");
+        setTimeout(() => changeStatus(plan, "done"), 250);
+      });
+      row.querySelector(".validate-no").addEventListener("click", () => {
+        row.classList.add("validated-no");
+        setTimeout(() => changeStatus(plan, "not_done"), 250);
+      });
+      list.appendChild(row);
+    });
   }
 
   /* --- Aujourd'hui --- */
@@ -90,20 +128,21 @@ const Week = (() => {
     plans.forEach((plan) => {
       const slot = SLOTS.find((s) => s.id === plan.slot);
       const row = html(`
-        <div class="row plan-row status-${plan.status || "none"}">
-          <div class="plan-row-main">
-            ${activityBadge(plan.activity, "sm")}
-            <div class="plan-row-text">
-              <span class="row-label">${escapeHtml(plan.activity)}</span>
-              <span class="row-detail">${slot.label}</span>
-            </div>
+        <div class="row plan-row state-${Rules.planState(plan)}">
+          ${activityBadge(plan.activity, "sm")}
+          <div class="plan-row-text">
+            <span class="row-label">${escapeHtml(plan.activity)}</span>
+            <span class="row-detail">${slot.label}</span>
           </div>
-          <div class="plan-row-status"></div>
+          <div class="validate-actions">
+            <button type="button" class="validate-btn validate-yes${plan.status === "done" ? " active" : ""}" aria-label="Je l'ai fait">${icon("check")}</button>
+            <button type="button" class="validate-btn validate-no${plan.status === "not_done" ? " active" : ""}" aria-label="Pas fait">${icon("close")}</button>
+          </div>
         </div>
       `);
-      row.querySelector(".plan-row-status").appendChild(
-        segmented(STATUS_OPTIONS, plan.status, (status) => changeStatus(plan, status), { small: true })
-      );
+      // Toucher le bouton déjà actif annule la réponse.
+      row.querySelector(".validate-yes").addEventListener("click", () => changeStatus(plan, plan.status === "done" ? null : "done"));
+      row.querySelector(".validate-no").addEventListener("click", () => changeStatus(plan, plan.status === "not_done" ? null : "not_done"));
       list.appendChild(row);
       if (plan.activity === TODO_ACTIVITY && plan.status !== "done") {
         const preview = html(`<div class="row row-nested"></div>`);
@@ -146,10 +185,14 @@ const Week = (() => {
       const cells = row.querySelector(".grid-row");
       SLOTS.forEach((slot) => {
         const plan = Storage.planAt(date, slot.id);
+        const state = plan ? Rules.planState(plan) : null;
+        // Repère dans le coin : ✓ faite, ✕ marquée « Pas fait », ! passée sans réponse.
+        const mark = !plan ? "" : state === "done" ? "check" : plan.status === "not_done" ? "close" : state === "missed" ? "alert" : "";
         const cell = html(`
-          <button type="button" class="grid-cell${plan ? ` cat-${plan.category} status-${plan.status || "none"}` : " is-empty"}"
+          <button type="button" class="grid-cell${plan ? ` cat-${plan.category} state-${state}` : " is-empty"}"
             aria-label="${escapeHtml(`${DateUtil.long(date)}, ${slot.label} : ${plan ? plan.activity : "libre"}`)}">
-            ${plan ? `<span class="grid-cell-text">${escapeHtml(plan.activity)}</span>${plan.status === "done" ? `<span class="grid-cell-check">${icon("check")}</span>` : ""}` : ""}
+            ${plan ? `<span class="grid-cell-dot dot-${plan.category}"></span><span class="grid-cell-text">${escapeHtml(plan.activity)}</span>` : ""}
+            ${mark ? `<span class="grid-cell-mark mark-${mark}">${icon(mark)}</span>` : ""}
           </button>
         `);
         cell.addEventListener("click", () => openCell(date, slot));
@@ -184,12 +227,23 @@ const Week = (() => {
               <button type="button" class="btn btn-quiet btn-block" data-action="remove">Libérer ce créneau</button>
             </div>
           `);
-          current.querySelector(".sheet-status").appendChild(
-            segmented(STATUS_OPTIONS, plan.status, async (status) => {
-              await changeStatus(plan, status);
-              sheet.rerender();
-            })
-          );
+          const choice = html(`
+            <div class="status-choice">
+              <button type="button" class="status-btn status-btn-done${plan.status === "done" ? " active" : ""}">${icon("check")} Je l'ai fait</button>
+              <button type="button" class="status-btn status-btn-missed${plan.status === "not_done" ? " active" : ""}">${icon("close")} Pas fait</button>
+            </div>
+          `);
+          // Toucher le choix déjà actif l'annule (l'activité redevient « sans réponse »).
+          const [doneBtn, missedBtn] = choice.querySelectorAll("button");
+          doneBtn.addEventListener("click", async () => {
+            await changeStatus(plan, plan.status === "done" ? null : "done");
+            sheet.rerender();
+          });
+          missedBtn.addEventListener("click", async () => {
+            await changeStatus(plan, plan.status === "not_done" ? null : "not_done");
+            sheet.rerender();
+          });
+          current.querySelector(".sheet-status").appendChild(choice);
           if (plan.activity === TODO_ACTIVITY) renderTodoPreview(current.querySelector(".sheet-todo"), { onChange: () => sheet.rerender() });
           current.querySelector('[data-action="change"]').addEventListener("click", () => {
             picking = true;
