@@ -154,3 +154,11 @@ $$;
 
 revoke all on function pause_calendar_feed(text) from public;
 grant execute on function pause_calendar_feed(text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- Déclencheur de l'envie (remplace le « besoin » et l'alternative proposée).
+-- Les anciennes envies gardent leur besoin ; les nouvelles n'ont qu'un déclencheur.
+
+alter table pause_cravings add column if not exists trigger_kind text
+  check (trigger_kind in ('ennui', 'fatigue', 'stress', 'reflexe'));
+alter table pause_cravings alter column need drop not null;

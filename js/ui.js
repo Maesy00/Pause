@@ -36,10 +36,11 @@ const ICONS = {
   briefcase: '<rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5M3.5 12.5h17"/>',
   phone: '<rect x="7" y="3" width="10" height="18" rx="2.6"/><path d="M11 18h2"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  hourglass: '<path d="M7 3.5h10M7 20.5h10"/><path d="M8 3.5c0 4.5 8 4.5 8 8.5s-8 4-8 8.5M16 3.5c0 4.5-8 4.5-8 8.5s8 4 8 8.5"/>',
+  battery: '<rect x="3" y="7.5" width="16" height="9" rx="2.6"/><path d="M21.5 10.5v3M6.5 10.5v3"/>',
+  bolt: '<path d="M13 3L5.5 13.5H12L11 21l7.5-10.5H12z"/>',
   calendar: '<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>',
 };
-
-const NEED_ICONS = { souffler: "wind", occuper: "sparkle", decrocher: "briefcase", reflexe: "phone" };
 
 function icon(name, className = "icon") {
   return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -340,54 +341,6 @@ function renderTodoPreview(container, { onChange } = {}) {
   });
   container.appendChild(block);
 }
-
-/* --- Respiration guidée : 5 s inspiration, 5 s expiration, 3 minutes --- */
-
-const Breathing = (() => {
-  const DURATION = 180;
-  let timer = null;
-
-  function start({ onEnd }) {
-    const overlay = html(`
-      <div class="breathing" role="dialog" aria-label="Respiration guidée">
-        <div class="breathing-stage">
-          <div class="breathing-halo"></div>
-          <div class="breathing-circle"></div>
-          <p class="breathing-label" aria-live="polite">Inspire</p>
-        </div>
-        <p class="breathing-time">3:00</p>
-        <div class="breathing-actions">
-          <button type="button" class="btn btn-glass btn-block breathing-stop">Terminer</button>
-        </div>
-      </div>
-    `);
-    document.body.appendChild(overlay);
-    requestAnimationFrame(() => overlay.classList.add("open"));
-
-    const label = overlay.querySelector(".breathing-label");
-    const time = overlay.querySelector(".breathing-time");
-    let elapsed = 0;
-
-    timer = setInterval(() => {
-      elapsed += 1;
-      const left = DURATION - elapsed;
-      time.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
-      if (elapsed % 5 === 0) label.textContent = Math.floor(elapsed / 5) % 2 === 0 ? "Inspire" : "Expire";
-      if (left <= 0) finish(true);
-    }, 1000);
-
-    function finish(completed) {
-      clearInterval(timer);
-      overlay.classList.remove("open");
-      setTimeout(() => overlay.remove(), 300);
-      if (onEnd) onEnd(completed);
-    }
-
-    overlay.querySelector(".breathing-stop").addEventListener("click", () => finish(false));
-  }
-
-  return { start };
-})();
 
 /* --- Grand titre iOS qui se replie dans la barre du haut --- */
 

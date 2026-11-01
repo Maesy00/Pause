@@ -1,7 +1,7 @@
 /*
  * rules.js — les règles qui relient les onglets entre eux :
  * défis (compte à rebours, archivage des courses, jours pratiqués),
- * passage automatique en « Fait », et choix des alternatives proposées.
+ * état des activités planifiées et passage automatique en « Fait ».
  */
 
 const Rules = (() => {
@@ -109,54 +109,6 @@ const Rules = (() => {
     for (const plan of plans) await Storage.setPlanStatus(plan.id, "done");
   }
 
-  /* --- Alternatives proposées --- */
-
-  // Taux d'envies passées pour une alternative (null tant qu'il n'y a pas de réponse).
-  function successRate(suggestion) {
-    const answered = Storage.getCravings().filter((c) => c.suggestion === suggestion && c.outcome);
-    if (answered.length === 0) return null;
-    return answered.filter((c) => c.outcome === "passed").length / answered.length;
-  }
-
-  // Activité planifiée pour le créneau en cours, pas encore faite.
-  function plannedNow() {
-    const { date, slot } = DateUtil.currentSlot();
-    const plan = Storage.planAt(date, slot);
-    if (!plan || plan.status) return null;
-    return { plan, slot: SLOTS.find((s) => s.id === slot) };
-  }
-
-  // Liste d'idées pour un besoin : l'activité planifiée d'abord, puis les idées
-  // qui marchent le mieux (avec un peu de hasard pour varier).
-  function suggestionsFor(need, { learning = false } = {}) {
-    const eveningWeekday = DateUtil.isWeekdayEvening();
-    let pool;
-
-    if (learning) {
-      pool = Activities.byCategory("apprentissage").map((a) => a.name);
-    } else {
-      const catalog = new Set(DEFAULT_ACTIVITIES.map((a) => a.name.toLowerCase()));
-      const custom = Storage.getActivities()
-        .filter((a) => !catalog.has(a.name.toLowerCase()) && NEED_CUSTOM_CATEGORIES[need].includes(a.category))
-        .map((a) => a.name);
-      pool = [...NEED_SUGGESTIONS[need], ...custom];
-      if (eveningWeekday) pool = pool.filter((name) => Activities.categoryOf(name) === "detente");
-      if (pool.length < 4) pool.push(...Activities.byCategory("detente").map((a) => a.name));
-    }
-
-    pool = [...new Set(pool)];
-    const pinned = !learning && (need === "souffler" || need === "reflexe") ? [BREATHING] : [];
-    const ranked = pool
-      .filter((name) => !pinned.includes(name))
-      .map((name) => ({ name, score: (successRate(name) ?? 0.5) + Math.random() * 0.35 }))
-      .sort((a, b) => b.score - a.score)
-      .map((x) => x.name);
-
-    const planned = learning ? null : plannedNow();
-    const first = planned ? [planned.plan.activity] : [];
-    return [...new Set([...first, ...pinned, ...ranked])].slice(0, 4);
-  }
-
   return {
     activeRaces,
     activeLearnings,
@@ -171,8 +123,5 @@ const Rules = (() => {
     plansToValidate,
     afterPlanStatusChange,
     syncTodoActivity,
-    successRate,
-    plannedNow,
-    suggestionsFor,
   };
 })();

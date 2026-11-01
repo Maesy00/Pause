@@ -1,7 +1,7 @@
 /*
- * home.js — onglet Accueil : le bouton « J'ai envie de scroller »,
- * les envies du jour (modifiables), la question de suivi à l'ouverture
- * suivante, et les statistiques sur les envies.
+ * home.js — onglet Accueil : le bouton « J'ai envie de scroller » (on note
+ * le déclencheur), les envies du jour (modifiables), la question de suivi
+ * à l'ouverture suivante, et les statistiques sur les envies.
  */
 
 const Home = (() => {
@@ -14,10 +14,6 @@ const Home = (() => {
   function onReopen() {
     openedCravingIds.clear();
     promptedThisOpening = false;
-  }
-
-  function needOf(id) {
-    return NEEDS.find((n) => n.id === id);
   }
 
   function dayOf(craving) {
@@ -53,9 +49,7 @@ const Home = (() => {
     Dialog.open({
       eyebrow: `${dayLabel(dayOf(pending))} à ${DateUtil.time(pending.createdAt)}`,
       title: "Ta dernière envie est passée ?",
-      message: `Tu avais besoin de <strong>${escapeHtml(needOf(pending.need).short)}</strong>${
-        pending.suggestion ? ` et tu avais choisi <strong>${escapeHtml(pending.suggestion)}</strong>` : ""
-      }.`,
+      message: `Tu avais noté : <strong>${escapeHtml(cravingReason(pending).short)}</strong>.`,
       actions: [
         { label: "Oui, c'est passé", style: "primary", onClick: () => answer(pending, "passed") },
         { label: "Non, j'ai scrollé", style: "secondary", onClick: () => answer(pending, "scrolled") },
@@ -92,13 +86,13 @@ const Home = (() => {
   }
 
   function cravingRow(craving, onSaved) {
-    const need = needOf(craving.need);
+    const reason = cravingReason(craving);
     const row = html(`
       <button type="button" class="row row-button craving-row">
-        <span class="badge badge-need badge-sm">${icon(NEED_ICONS[craving.need])}</span>
+        <span class="badge badge-need badge-sm">${icon(reason.icon)}</span>
         <span class="row-label">
-          ${escapeHtml(craving.suggestion || "Sans alternative")}
-          <span class="row-detail tabular">${DateUtil.time(craving.createdAt)} · ${escapeHtml(need.label)}</span>
+          ${escapeHtml(reason.label)}
+          <span class="row-detail tabular">${DateUtil.time(craving.createdAt)}</span>
         </span>
         ${outcomeTag(craving)}
       </button>
@@ -126,7 +120,7 @@ const Home = (() => {
           <span class="orb orb-3" aria-hidden="true"></span>
           <span class="scroll-button-icon" aria-hidden="true">${icon("wind")}</span>
           <span class="scroll-button-title">J'ai envie de scroller</span>
-          <span class="scroll-button-subtitle">On prend une minute ensemble</span>
+          <span class="scroll-button-subtitle">Note ce qui la déclenche</span>
         </button>
       </section>
 
@@ -156,13 +150,13 @@ const Home = (() => {
             ${Stats.byHour(cravings)}
           </div>
           <div class="card">
-            <h4 class="card-title">Pourquoi</h4>
-            ${Stats.byNeed(cravings)}
+            <h4 class="card-title">Ce qui les déclenche</h4>
+            ${Stats.byReason(cravings)}
           </div>
           <div class="card">
-            <h4 class="card-title">Ce qui marche</h4>
-            <p class="card-caption">Part des envies passées, pour chaque alternative</p>
-            ${Stats.whatWorks(cravings)}
+            <h4 class="card-title">Quand l'envie passe</h4>
+            <p class="card-caption">Part des envies passées sans scroller, selon le déclencheur</p>
+            ${Stats.passRate(cravings)}
           </div>
           <div class="card">
             <h4 class="card-title">Par semaine</h4>
@@ -211,57 +205,43 @@ const Home = (() => {
     });
   }
 
+  function triggerList(selected, onPick) {
+    const list = html(`<div class="list"></div>`);
+    TRIGGERS.forEach((trigger) => {
+      const row = html(`
+        <button type="button" class="row row-button">
+          <span class="badge badge-need badge-sm">${icon(trigger.icon)}</span>
+          <span class="row-label">${escapeHtml(trigger.label)}</span>
+          ${trigger.id === selected ? `<span class="row-check">${icon("check")}</span>` : ""}
+        </button>
+      `);
+      row.addEventListener("click", () => onPick(trigger.id));
+      list.appendChild(row);
+    });
+    return list;
+  }
+
   function openCravingEditor(craving, onSaved) {
     const draft = {
-      need: craving.need,
-      suggestion: craving.suggestion,
+      trigger: craving.trigger,
       outcome: craving.outcome,
       time: DateUtil.time(craving.createdAt).replace("h", ":"),
     };
-    let picking = false;
 
     Sheet.open({
       title: "Modifier l'envie",
       leading: { label: "Annuler", onClick: (sheet) => sheet.close() },
       trailing: null,
       render(body, sheet) {
-        if (picking) {
-          const back = html(`<button type="button" class="link-button">${icon("chevronLeft", "icon icon-inline")} Retour</button>`);
-          back.addEventListener("click", () => {
-            picking = false;
-            sheet.rerender();
-          });
-          body.appendChild(back);
-          renderActivityPicker(body, {
-            selected: draft.suggestion,
-            onPick(activity) {
-              draft.suggestion = activity.name;
-              picking = false;
-              sheet.rerender();
-              sheet.scrollTop();
-            },
-          });
-          return;
-        }
-
         const form = html(`
           <form>
             <div class="list">
               <label class="row"><span class="row-label">Heure</span><input class="row-input align-right" type="time" name="time" required></label>
             </div>
             <section class="group">
-              <h3 class="group-header">Besoin</h3>
-              <div class="list" data-slot="needs"></div>
-            </section>
-            <section class="group">
-              <h3 class="group-header">Alternative</h3>
-              <div class="list">
-                <button type="button" class="row row-button" data-action="pick">
-                  ${draft.suggestion ? activityBadge(draft.suggestion, "sm") : ""}
-                  <span class="row-label">${escapeHtml(draft.suggestion || "Choisir une alternative")}</span>
-                  <span class="row-chevron">${icon("chevronRight")}</span>
-                </button>
-              </div>
+              <h3 class="group-header">Déclencheur</h3>
+              <div data-slot="triggers"></div>
+              ${!draft.trigger && craving.need ? `<p class="footnote">Noté avant les déclencheurs : « ${escapeHtml(LEGACY_NEEDS[craving.need].label)} ».</p>` : ""}
             </section>
             <section class="group">
               <h3 class="group-header">Est-elle passée ?</h3>
@@ -274,21 +254,12 @@ const Home = (() => {
         form.elements.time.value = draft.time;
         form.elements.time.addEventListener("change", () => (draft.time = form.elements.time.value));
 
-        const needs = form.querySelector('[data-slot="needs"]');
-        NEEDS.forEach((need) => {
-          const row = html(`
-            <button type="button" class="row row-button">
-              <span class="badge badge-need badge-sm">${icon(NEED_ICONS[need.id])}</span>
-              <span class="row-label">${escapeHtml(need.label)}</span>
-              ${need.id === draft.need ? `<span class="row-check">${icon("check")}</span>` : ""}
-            </button>
-          `);
-          row.addEventListener("click", () => {
-            draft.need = need.id;
+        form.querySelector('[data-slot="triggers"]').appendChild(
+          triggerList(draft.trigger, (id) => {
+            draft.trigger = id;
             sheet.rerender();
-          });
-          needs.appendChild(row);
-        });
+          })
+        );
 
         form.querySelector('[data-slot="outcome"]').appendChild(
           segmented(
@@ -305,20 +276,13 @@ const Home = (() => {
           )
         );
 
-        form.querySelector('[data-action="pick"]').addEventListener("click", () => {
-          picking = true;
-          sheet.rerender();
-          sheet.scrollTop();
-        });
-
         form.addEventListener("submit", async (event) => {
           event.preventDefault();
           const date = new Date(craving.createdAt);
           const [hours, minutes] = draft.time.split(":").map(Number);
           date.setHours(hours, minutes);
           await Storage.updateCraving(craving.id, {
-            need: draft.need,
-            suggestion: draft.suggestion,
+            trigger: draft.trigger,
             outcome: draft.outcome,
             createdAt: date.toISOString(),
           });
@@ -339,18 +303,10 @@ const Home = (() => {
     });
   }
 
-  /* --- Le parcours « J'ai envie de scroller » --- */
+  /* --- « J'ai envie de scroller » : un appui pour noter le déclencheur --- */
 
   function startCraving() {
-    const state = {
-      pressedAt: new Date().toISOString(),
-      planned: Rules.plannedNow(),
-      need: null,
-      suggestions: [],
-      choice: null,
-      group: "pour-toi",
-      learning: false,
-    };
+    const pressedAt = new Date().toISOString();
 
     Sheet.open({
       title: "Une envie de scroller",
@@ -358,165 +314,31 @@ const Home = (() => {
       trailing: null,
       onClose: () => App.renderAll(),
       render(body, sheet) {
-        if (!state.need) renderNeedStep(body, sheet, state);
-        else renderChoiceStep(body, sheet, state);
+        body.appendChild(html(`<p class="sheet-question">Qu'est-ce qui la déclenche ?</p>`));
+        const choices = html(`<div class="need-choices"></div>`);
+        TRIGGERS.forEach((trigger) => {
+          const btn = html(`
+            <button type="button" class="need-button">
+              <span class="badge badge-need">${icon(trigger.icon)}</span>
+              <span>${escapeHtml(trigger.label)}</span>
+            </button>
+          `);
+          btn.addEventListener("click", async () => {
+            choices.querySelectorAll("button").forEach((b) => (b.disabled = true));
+            const craving = await Storage.addCraving({ trigger: trigger.id, createdAt: pressedAt });
+            if (!craving) {
+              choices.querySelectorAll("button").forEach((b) => (b.disabled = false));
+              return;
+            }
+            openedCravingIds.add(craving.id);
+            sheet.close();
+            showToast("C'est noté. Je te demanderai à ta prochaine visite si l'envie est passée.");
+          });
+          choices.appendChild(btn);
+        });
+        body.appendChild(choices);
       },
     });
-  }
-
-  // Étape 1 : l'activité prévue (s'il y en a une), puis un seul appui pour dire de quoi on a besoin.
-  function renderNeedStep(body, sheet, state) {
-    if (state.planned) {
-      const { plan, slot } = state.planned;
-      body.appendChild(html(`
-        <div class="reminder">
-          ${activityBadge(plan.activity)}
-          <div>
-            <span class="reminder-label">${slot.reminder}, tu avais prévu :</span>
-            <span class="reminder-activity">${escapeHtml(plan.activity)}</span>
-          </div>
-        </div>
-      `));
-    }
-    body.appendChild(html(`<p class="sheet-question">De quoi as-tu besoin ?</p>`));
-    const choices = html(`<div class="need-choices"></div>`);
-    NEEDS.forEach((need) => {
-      const btn = html(`
-        <button type="button" class="need-button">
-          <span class="badge badge-need">${icon(NEED_ICONS[need.id])}</span>
-          <span>${escapeHtml(need.label)}</span>
-        </button>
-      `);
-      btn.addEventListener("click", () => {
-        state.need = need.id;
-        state.suggestions = Rules.suggestionsFor(need.id);
-        state.choice = state.choice && state.suggestions.includes(state.choice) ? state.choice : state.suggestions[0];
-        state.group = "pour-toi";
-        sheet.setTitle("Et si tu essayais…");
-        sheet.rerender();
-        sheet.scrollTop();
-      });
-      choices.appendChild(btn);
-    });
-    body.appendChild(choices);
-  }
-
-  // Groupes d'alternatives. Le soir en semaine : seulement la détente,
-  // l'apprentissage reste à un appui (« Plutôt envie d'apprendre ? »).
-  function alternativeGroups(state) {
-    const detente = Activities.byCategory("detente").map((a) => a.name);
-    const groups = [{ id: "pour-toi", label: "Pour toi", items: state.suggestions }];
-    const eveningWeekday = DateUtil.isWeekdayEvening();
-    if (!eveningWeekday) groups.push({ id: "sport", label: "Sport", items: Activities.byCategory("sport").map((a) => a.name) });
-    groups.push({ id: "detente", label: "Détente", items: detente });
-    if (!eveningWeekday || state.learning) {
-      groups.push({ id: "apprentissage", label: "Apprentissage", items: Activities.byCategory("apprentissage").map((a) => a.name) });
-    }
-    return groups;
-  }
-
-  // Étape 2 : l'alternative choisie en grand, toutes les autres rangées par groupe, puis « C'est parti ».
-  function renderChoiceStep(body, sheet, state) {
-    const need = needOf(state.need);
-    const name = state.choice;
-    const category = Activities.categoryOf(name);
-
-    const needChip = html(`
-      <button type="button" class="need-chip">
-        ${icon(NEED_ICONS[need.id], "icon icon-inline")}
-        <span>${escapeHtml(need.label)}</span>
-        <span class="need-chip-change">Changer</span>
-      </button>
-    `);
-    needChip.addEventListener("click", () => {
-      state.need = null;
-      sheet.setTitle("Une envie de scroller");
-      sheet.rerender();
-    });
-    body.appendChild(needChip);
-
-    const main = html(`
-      <div class="suggestion suggestion-${category}">
-        <span class="suggestion-icon">${icon(name === BREATHING ? "wind" : category)}</span>
-        <span class="suggestion-kind">${name === BREATHING ? "3 minutes guidées" : CATEGORIES[category].label}</span>
-        <span class="suggestion-name">${escapeHtml(name)}</span>
-        <div class="suggestion-extra"></div>
-      </div>
-    `);
-    if (name === TODO_ACTIVITY) renderTodoPreview(main.querySelector(".suggestion-extra"), { onChange: () => sheet.rerender() });
-    body.appendChild(main);
-
-    const groups = alternativeGroups(state);
-    if (!groups.some((g) => g.id === state.group)) state.group = "pour-toi";
-    const current = groups.find((g) => g.id === state.group);
-
-    const section = html(`
-      <section class="group">
-        <h3 class="group-header">Toutes les alternatives</h3>
-        <div class="chip-row" role="tablist"></div>
-        <div class="list"></div>
-      </section>
-    `);
-    const chips = section.querySelector(".chip-row");
-    groups.forEach((group) => {
-      const chip = html(`<button type="button" role="tab" class="chip${group.id === state.group ? " active" : ""}">${escapeHtml(group.label)}</button>`);
-      chip.addEventListener("click", () => {
-        state.group = group.id;
-        sheet.rerender();
-      });
-      chips.appendChild(chip);
-    });
-
-    const list = section.querySelector(".list");
-    current.items.forEach((item) => {
-      const row = html(`
-        <button type="button" class="row row-button${item === name ? " is-selected" : ""}">
-          ${activityBadge(item, "sm")}
-          <span class="row-label">${escapeHtml(item)}</span>
-          ${item === name ? `<span class="row-check">${icon("check")}</span>` : ""}
-        </button>
-      `);
-      row.addEventListener("click", () => {
-        state.choice = item;
-        sheet.rerender();
-        sheet.scrollTop();
-      });
-      list.appendChild(row);
-    });
-    body.appendChild(section);
-
-    if (DateUtil.isWeekdayEvening() && !state.learning) {
-      const learn = html(`<button type="button" class="link-button link-centered">Plutôt envie d'apprendre ?</button>`);
-      learn.addEventListener("click", () => {
-        state.learning = true;
-        state.group = "apprentissage";
-        sheet.rerender();
-      });
-      body.appendChild(learn);
-    }
-
-    const footer = html(`
-      <div class="sheet-footer">
-        <button type="button" class="btn btn-primary btn-block">C'est parti</button>
-      </div>
-    `);
-    const go = footer.querySelector("button");
-    go.addEventListener("click", async () => {
-      go.disabled = true;
-      const craving = await Storage.addCraving({ need: state.need, suggestion: name, createdAt: state.pressedAt });
-      if (!craving) {
-        go.disabled = false;
-        return;
-      }
-      openedCravingIds.add(craving.id);
-      sheet.close();
-      if (name === BREATHING) {
-        Breathing.start({});
-      } else {
-        showToast("Bonne pause. Je te demanderai à ta prochaine visite si l'envie est passée.");
-      }
-    });
-    body.appendChild(footer);
   }
 
   return { render, onReopen, promptPending };

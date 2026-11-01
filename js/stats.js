@@ -48,37 +48,41 @@ const Stats = (() => {
     );
   }
 
-  function byNeed(cravings) {
+  // Regroupe les envies par raison (déclencheur, ou besoin pour les plus anciennes).
+  function groupByReason(cravings) {
+    const groups = {};
+    cravings.forEach((c) => {
+      const reason = cravingReason(c);
+      groups[reason.id] = groups[reason.id] || { label: reason.label, items: [] };
+      groups[reason.id].items.push(c);
+    });
+    return Object.values(groups);
+  }
+
+  function byReason(cravings) {
     const total = cravings.length;
     return rows(
-      NEEDS.map((need) => {
-        const count = cravings.filter((c) => c.need === need.id).length;
-        const label = need.short.charAt(0).toUpperCase() + need.short.slice(1);
-        return { label, value: `${count} · ${Math.round((count / total) * 100)} %`, ratio: count / total };
-      }).sort((a, b) => b.ratio - a.ratio)
+      groupByReason(cravings)
+        .map((g) => ({ label: g.label, value: `${g.items.length} · ${Math.round((g.items.length / total) * 100)} %`, ratio: g.items.length / total }))
+        .sort((a, b) => b.ratio - a.ratio)
     );
   }
 
-  function whatWorks(cravings) {
-    const answered = cravings.filter((c) => c.outcome && c.suggestion);
-    if (answered.length === 0) return `<p class="muted">Réponds à « C'est passé ? » après une envie pour voir ce qui marche le mieux pour toi.</p>`;
-    const bySuggestion = {};
-    answered.forEach((c) => {
-      bySuggestion[c.suggestion] = bySuggestion[c.suggestion] || { passed: 0, total: 0 };
-      bySuggestion[c.suggestion].total += 1;
-      if (c.outcome === "passed") bySuggestion[c.suggestion].passed += 1;
-    });
+  function passRate(cravings) {
+    const answered = cravings.filter((c) => c.outcome);
+    if (answered.length === 0) return `<p class="muted">Réponds à « Ta dernière envie est passée ? » pour voir quand l'envie passe le plus souvent.</p>`;
     return rows(
-      Object.entries(bySuggestion)
-        .map(([name, s]) => ({
-          label: name,
-          value: `${Math.round((s.passed / s.total) * 100)} % · ${s.passed}/${s.total}`,
-          ratio: s.passed / s.total,
-          rate: s.passed / s.total,
-          total: s.total,
-          category: Activities.categoryOf(name),
-        }))
-        .sort((a, b) => b.rate - a.rate || b.total - a.total),
+      groupByReason(answered)
+        .map((g) => {
+          const passed = g.items.filter((c) => c.outcome === "passed").length;
+          return {
+            label: g.label,
+            value: `${Math.round((passed / g.items.length) * 100)} % · ${passed}/${g.items.length}`,
+            ratio: passed / g.items.length,
+            total: g.items.length,
+          };
+        })
+        .sort((a, b) => b.ratio - a.ratio || b.total - a.total),
       { absolute: true }
     );
   }
@@ -98,5 +102,5 @@ const Stats = (() => {
     );
   }
 
-  return { byHour, byNeed, whatWorks, byWeek };
+  return { byHour, byReason, passRate, byWeek };
 })();

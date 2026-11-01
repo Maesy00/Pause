@@ -660,14 +660,6 @@ button {
   font-weight: 500;
 }
 
-.btn-glass {
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border: 0.5px solid var(--glass-border);
-  color: var(--label);
-}
-
 .link-button {
   color: var(--accent);
   font-size: 15px;
@@ -768,45 +760,6 @@ button {
 .segmented-small .segment {
   min-height: 30px;
   font-size: 13px;
-}
-
-/* --- Puces de groupe (Pour toi · Sport · Détente · Apprentissage) --- */
-
-.chip-row {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  margin: 0 -16px 12px;
-  padding: 2px 16px 6px;
-}
-
-.chip-row::-webkit-scrollbar {
-  display: none;
-}
-
-.chip {
-  flex-shrink: 0;
-  min-height: 38px;
-  padding: 0 16px;
-  border-radius: 999px;
-  background: var(--card);
-  border: 0.5px solid var(--card-border);
-  box-shadow: var(--shadow);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--label-2);
-  transition: background-color 0.2s, color 0.2s, transform 0.2s var(--spring);
-}
-
-.chip:active {
-  transform: scale(0.95);
-}
-
-.chip.active {
-  background: var(--label);
-  color: var(--bg);
-  border-color: transparent;
 }
 
 /* --- Accueil --- */
@@ -1078,31 +1031,6 @@ button {
 
 /* --- Parcours « envie de scroller » --- */
 
-.reminder {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
-  border-radius: var(--radius-lg);
-  background: var(--card);
-  border: 0.5px solid var(--card-border);
-  box-shadow: var(--shadow);
-}
-
-.reminder-label {
-  display: block;
-  font-size: 14px;
-  color: var(--label-2);
-}
-
-.reminder-activity {
-  display: block;
-  margin-top: 2px;
-  font-size: 20px;
-  font-weight: 750;
-  letter-spacing: -0.02em;
-}
-
 .sheet-question {
   margin: 22px 4px 12px;
   font-size: 22px;
@@ -1138,105 +1066,6 @@ button {
 .need-button:active {
   transform: scale(0.98);
   background: var(--card-pressed);
-}
-
-.need-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  padding: 0 5px 0 12px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 14px;
-  font-weight: 650;
-  margin-bottom: 14px;
-}
-
-.need-chip-change {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--card-solid);
-  font-size: 12px;
-}
-
-.suggestion {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 22px;
-  border-radius: var(--radius-lg);
-  color: #FFFFFF;
-  box-shadow: 0 20px 40px -24px rgba(60, 60, 140, 0.6);
-}
-
-.suggestion::after {
-  content: "";
-  position: absolute;
-  width: 180px;
-  height: 180px;
-  top: -70px;
-  right: -50px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
-  filter: blur(20px);
-  pointer-events: none;
-}
-
-.suggestion-sport { background: linear-gradient(140deg, var(--sport-1), var(--sport-2)); }
-.suggestion-detente { background: linear-gradient(140deg, var(--detente-1), var(--detente-2)); }
-.suggestion-apprentissage { background: linear-gradient(140deg, var(--apprentissage-1), var(--apprentissage-2)); }
-
-.suggestion-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.24);
-  border: 0.5px solid rgba(255, 255, 255, 0.4);
-}
-
-.suggestion-kind {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.85;
-}
-
-.suggestion-name {
-  font-size: 28px;
-  font-weight: 800;
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-}
-
-.suggestion-extra:not(:empty) {
-  margin-top: 12px;
-}
-
-.suggestion .todo-preview .list {
-  background: rgba(255, 255, 255, 0.92);
-  color: #17162B;
-  box-shadow: none;
-}
-
-.suggestion .todo-preview .link-button {
-  color: #FFFFFF;
-}
-
-.sheet-footer {
-  position: sticky;
-  bottom: calc(-24px - env(safe-area-inset-bottom));
-  margin: 20px -16px calc(-24px - env(safe-area-inset-bottom));
-  padding: 4px 16px calc(20px + env(safe-area-inset-bottom));
-  background: linear-gradient(to bottom, transparent, var(--bg) 30%);
 }
 
 /* --- Feuille du bas --- */
@@ -1997,85 +1826,6 @@ a.btn {
   border: none;
 }
 
-/* --- Respiration guidée --- */
-
-.breathing {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  background: radial-gradient(circle at 50% 35%, var(--blob-1), var(--bg) 70%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: calc(env(safe-area-inset-top) + 40px) 24px calc(env(safe-area-inset-bottom) + 24px);
-  opacity: 0;
-  transition: opacity 0.5s;
-}
-
-.breathing.open {
-  opacity: 1;
-}
-
-.breathing-stage {
-  flex: 1;
-  position: relative;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.breathing-circle,
-.breathing-halo {
-  position: absolute;
-  width: min(78vw, 320px);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  transform: scale(0.5);
-  animation: breathe 10s ease-in-out infinite;
-}
-
-.breathing-circle {
-  background: radial-gradient(circle at 32% 28%, #B9E3FF, #8C7CF7 60%, #6E8CF8);
-  box-shadow: 0 30px 60px -20px rgba(91, 90, 230, 0.7), inset 0 2px 0 rgba(255, 255, 255, 0.4);
-}
-
-.breathing-halo {
-  width: min(95vw, 400px);
-  background: radial-gradient(circle, rgba(160, 140, 250, 0.45), transparent 70%);
-  filter: blur(20px);
-}
-
-@keyframes breathe {
-  0%, 100% { transform: scale(0.5); }
-  50% { transform: scale(1); }
-}
-
-.breathing-label {
-  position: relative;
-  margin: 0;
-  font-size: 26px;
-  font-weight: 700;
-  color: #FFFFFF;
-  letter-spacing: -0.01em;
-  text-shadow: 0 1px 10px rgba(40, 50, 120, 0.3);
-}
-
-.breathing-time {
-  margin: 0 0 8px;
-  font-family: var(--font-rounded);
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--label-2);
-  font-variant-numeric: tabular-nums;
-}
-
-.breathing-actions {
-  width: 100%;
-  max-width: 400px;
-}
-
 /* --- Toast --- */
 
 .toast {
@@ -2183,12 +1933,6 @@ a.btn {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-
-  .breathing-circle,
-  .breathing-halo {
-    animation: none;
-    transform: scale(0.8);
   }
 
   .blob,

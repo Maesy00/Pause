@@ -23,7 +23,7 @@ const Storage = (() => {
       id: row.id,
       createdAt: row.created_at,
       need: row.need,
-      suggestion: row.suggestion && currentActivityName(row.suggestion),
+      trigger: row.trigger_kind,
       outcome: row.outcome,
       answeredAt: row.answered_at,
     };
@@ -147,13 +147,13 @@ const Storage = (() => {
     return cache.cravings;
   }
 
-  // L'envie n'est enregistrée qu'une fois l'alternative choisie (« Annuler » n'enregistre rien),
-  // mais avec l'heure de l'appui sur le bouton.
-  async function addCraving({ need, suggestion, createdAt }) {
+  // L'envie est enregistrée avec l'heure de l'appui sur le bouton
+  // (« Annuler » n'enregistre rien).
+  async function addCraving({ trigger, createdAt }) {
     const data = await run(
       supabaseClient
         .from("pause_cravings")
-        .insert({ user_id: userId, need, suggestion, created_at: createdAt || new Date().toISOString() })
+        .insert({ user_id: userId, trigger_kind: trigger, created_at: createdAt || new Date().toISOString() })
         .select()
         .single(),
       "enregistrement de l'envie"
@@ -166,10 +166,9 @@ const Storage = (() => {
   }
 
   // outcome : "passed", "scrolled", ou null pour « pas encore de réponse ».
-  async function updateCraving(id, { need, suggestion, outcome, createdAt }) {
+  async function updateCraving(id, { trigger, outcome, createdAt }) {
     const fields = {};
-    if (need !== undefined) fields.need = need;
-    if (suggestion !== undefined) fields.suggestion = suggestion;
+    if (trigger !== undefined) fields.trigger_kind = trigger;
     if (createdAt !== undefined) fields.created_at = createdAt;
     if (outcome !== undefined) {
       const current = cache.cravings.find((c) => c.id === id);

@@ -49,35 +49,33 @@ function currentActivityName(name) {
   return RENAMED_ACTIVITIES[name] || name;
 }
 
-const NEEDS = [
-  { id: "souffler", label: "Souffler", short: "souffler" },
-  { id: "occuper", label: "M'occuper la tête", short: "m'occuper la tête" },
-  { id: "decrocher", label: "Décrocher du travail", short: "décrocher du travail" },
-  { id: "reflexe", label: "Je ne sais pas, c'est juste le réflexe", short: "juste le réflexe" },
+// Déclencheurs proposés quand on appuie sur « J'ai envie de scroller ».
+const TRIGGERS = [
+  { id: "ennui", label: "Ennui", short: "l'ennui", icon: "hourglass" },
+  { id: "fatigue", label: "Fatigue", short: "la fatigue", icon: "battery" },
+  { id: "stress", label: "Stress", short: "le stress", icon: "bolt" },
+  { id: "reflexe", label: "Réflexe", short: "le réflexe", icon: "phone" },
 ];
 
-// Idées proposées pour chaque besoin, de la plus évidente à la moins évidente.
-// Les activités ajoutées à la main rejoignent ces listes selon leur catégorie.
-const NEED_SUGGESTIONS = {
-  souffler: [BREATHING, "Méditation", "Skincare", "Promenade", "Yoga/Pilates"],
-  occuper: ["Mots fléchés", "Sudoku", "Tricot/Crochet", "Lecture", "Échecs", "Piano", "Couture"],
-  decrocher: ["Promenade", "Course à pied", "Vélo", "Natation", "Skincare", "Film/Série"],
-  reflexe: [BREATHING, "Promenade", TODO_ACTIVITY, "Méditation", "Lecture"],
+// Besoins des premières versions : seulement pour afficher les anciennes envies.
+const LEGACY_NEEDS = {
+  souffler: { label: "Souffler", short: "souffler", icon: "wind" },
+  occuper: { label: "M'occuper la tête", short: "m'occuper la tête", icon: "sparkle" },
+  decrocher: { label: "Décrocher du travail", short: "décrocher du travail", icon: "briefcase" },
+  reflexe: { label: "Juste le réflexe", short: "le réflexe", icon: "phone" },
 };
 
-const NEED_CUSTOM_CATEGORIES = {
-  souffler: ["detente"],
-  occuper: ["detente", "apprentissage"],
-  decrocher: ["sport", "detente"],
-  reflexe: ["detente"],
-};
+// Raison affichée pour une envie : son déclencheur, ou son ancien besoin.
+function cravingReason(craving) {
+  if (craving.trigger) return TRIGGERS.find((t) => t.id === craving.trigger);
+  return { id: `need-${craving.need}`, ...LEGACY_NEEDS[craving.need] };
+}
 
-// end : heure de fin du créneau (29 = 5 h du matin le lendemain, la soirée court jusque-là).
 const SLOTS = [
-  { id: "matin", label: "Matin", short: "Matin", reminder: "Ce matin", end: 11 },
-  { id: "midi", label: "Midi", short: "Midi", reminder: "Ce midi", end: 14 },
-  { id: "apres_midi", label: "Après-midi", short: "Aprèm", reminder: "Cet après-midi", end: 18 },
-  { id: "soir", label: "Soir", short: "Soir", reminder: "Ce soir", end: 29 },
+  { id: "matin", label: "Matin", short: "Matin", end: 11 },
+  { id: "midi", label: "Midi", short: "Midi", end: 14 },
+  { id: "apres_midi", label: "Après-midi", short: "Aprèm", end: 18 },
+  { id: "soir", label: "Soir", short: "Soir", end: 29 },
 ];
 
 const RACE_DISCIPLINES = ["Course à pied", "Trail", "Triathlon", "Vélo", "Natation", "Duathlon", "Swimrun"];
@@ -152,23 +150,5 @@ const DateUtil = {
 
   time(iso) {
     return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", "h");
-  },
-
-  // Créneau en cours. Avant 5 h du matin, on est encore dans la soirée de la veille.
-  currentSlot(now = new Date()) {
-    const hour = now.getHours();
-    const today = DateUtil.toKey(now);
-    if (hour < 5) return { date: DateUtil.addDays(today, -1), slot: "soir" };
-    if (hour < 11) return { date: today, slot: "matin" };
-    if (hour < 14) return { date: today, slot: "midi" };
-    if (hour < 18) return { date: today, slot: "apres_midi" };
-    return { date: today, slot: "soir" };
-  },
-
-  // Soir de semaine : du lundi au vendredi, à partir de 18 h (et jusqu'à 5 h).
-  isWeekdayEvening(now = new Date()) {
-    const { date, slot } = DateUtil.currentSlot(now);
-    const day = DateUtil.fromKey(date).getDay();
-    return slot === "soir" && day >= 1 && day <= 5;
   },
 };
