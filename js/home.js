@@ -118,7 +118,7 @@ const Home = (() => {
           <span class="orb orb-1" aria-hidden="true"></span>
           <span class="orb orb-2" aria-hidden="true"></span>
           <span class="orb orb-3" aria-hidden="true"></span>
-          <span class="scroll-button-icon" aria-hidden="true">${icon("wind")}</span>
+          <span class="scroll-button-icon" aria-hidden="true">${icon("pause")}</span>
           <span class="scroll-button-title">J'ai envie de scroller</span>
           <span class="scroll-button-subtitle">Note ce qui la déclenche</span>
         </button>
@@ -241,7 +241,6 @@ const Home = (() => {
             <section class="group">
               <h3 class="group-header">Déclencheur</h3>
               <div data-slot="triggers"></div>
-              ${!draft.trigger && craving.need ? `<p class="footnote">Noté avant les déclencheurs : « ${escapeHtml(LEGACY_NEEDS[craving.need].label)} ».</p>` : ""}
             </section>
             <section class="group">
               <h3 class="group-header">Est-elle passée ?</h3>

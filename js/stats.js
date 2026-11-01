@@ -48,7 +48,7 @@ const Stats = (() => {
     );
   }
 
-  // Regroupe les envies par raison (déclencheur, ou besoin pour les plus anciennes).
+  // Regroupe les envies par déclencheur.
   function groupByReason(cravings) {
     const groups = {};
     cravings.forEach((c) => {

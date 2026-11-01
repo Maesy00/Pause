@@ -515,6 +515,11 @@ button {
   padding-left: 16px;
 }
 
+.row-action .btn-block {
+  margin-top: 0;
+  min-height: 44px;
+}
+
 .card {
   background: var(--card);
   -webkit-backdrop-filter: blur(20px);
@@ -658,6 +663,14 @@ button {
 .btn-quiet {
   color: var(--label-2);
   font-weight: 500;
+}
+
+.btn-glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 0.5px solid var(--glass-border);
+  color: var(--label);
 }
 
 .link-button {
@@ -1826,6 +1839,85 @@ a.btn {
   border: none;
 }
 
+/* --- Respiration guidée --- */
+
+.breathing {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: radial-gradient(circle at 50% 35%, var(--blob-1), var(--bg) 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top) + 40px) 24px calc(env(safe-area-inset-bottom) + 24px);
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.breathing.open {
+  opacity: 1;
+}
+
+.breathing-stage {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.breathing-circle,
+.breathing-halo {
+  position: absolute;
+  width: min(78vw, 320px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: scale(0.5);
+  animation: breathe 10s ease-in-out infinite;
+}
+
+.breathing-circle {
+  background: radial-gradient(circle at 32% 28%, #B9E3FF, #8C7CF7 60%, #6E8CF8);
+  box-shadow: 0 30px 60px -20px rgba(91, 90, 230, 0.7), inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+.breathing-halo {
+  width: min(95vw, 400px);
+  background: radial-gradient(circle, rgba(160, 140, 250, 0.45), transparent 70%);
+  filter: blur(20px);
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(0.5); }
+  50% { transform: scale(1); }
+}
+
+.breathing-label {
+  position: relative;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 10px rgba(40, 50, 120, 0.3);
+}
+
+.breathing-time {
+  margin: 0 0 8px;
+  font-family: var(--font-rounded);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--label-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.breathing-actions {
+  width: 100%;
+  max-width: 400px;
+}
+
 /* --- Toast --- */
 
 .toast {
@@ -1933,6 +2025,12 @@ a.btn {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .breathing-circle,
+  .breathing-halo {
+    animation: none;
+    transform: scale(0.8);
   }
 
   .blob,

@@ -17,6 +17,24 @@ const Week = (() => {
     App.renderAll();
   }
 
+  // Respiration guidée : 3 minutes, puis l'activité passe en « Fait ».
+  function startBreathing(plan, onDone) {
+    Breathing.start({
+      async onEnd(completed) {
+        if (!completed) return;
+        if (plan.status !== "done") await changeStatus(plan, "done");
+        showToast("Trois minutes rien que pour toi. C'est marqué comme fait.");
+        if (onDone) onDone();
+      },
+    });
+  }
+
+  function breathingButton(plan, onDone) {
+    const btn = html(`<button type="button" class="btn btn-primary btn-block">${icon("wind", "icon icon-inline")} Commencer · 3 min</button>`);
+    btn.addEventListener("click", () => startBreathing(plan, onDone));
+    return btn;
+  }
+
   function render() {
     const today = DateUtil.today();
     const isCurrentWeek = weekStart === DateUtil.weekStart(today);
@@ -161,6 +179,11 @@ const Week = (() => {
         renderTodoPreview(preview, { onChange: render });
         list.appendChild(preview);
       }
+      if (plan.activity === BREATHING && plan.status !== "done") {
+        const start = html(`<div class="row row-nested row-action"></div>`);
+        start.appendChild(breathingButton(plan));
+        list.appendChild(start);
+      }
     });
 
     if (races.length === 0 && plans.length === 0) {
@@ -257,6 +280,7 @@ const Week = (() => {
           });
           current.querySelector(".sheet-status").appendChild(choice);
           if (plan.activity === TODO_ACTIVITY) renderTodoPreview(current.querySelector(".sheet-todo"), { onChange: () => sheet.rerender() });
+          if (plan.activity === BREATHING) current.querySelector(".sheet-todo").appendChild(breathingButton(plan, () => sheet.rerender()));
           current.querySelector('[data-action="change"]').addEventListener("click", () => {
             picking = true;
             sheet.rerender();

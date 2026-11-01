@@ -1,6 +1,6 @@
 /*
  * activities.js — catalogue fixe de l'app : catégories, activités de
- * départ, besoins, créneaux, et petits utilitaires de dates.
+ * départ, déclencheurs, créneaux, et petits utilitaires de dates.
  * Les activités ajoutées à la main viennent de Storage.
  */
 
@@ -57,18 +57,9 @@ const TRIGGERS = [
   { id: "reflexe", label: "Réflexe", short: "le réflexe", icon: "phone" },
 ];
 
-// Besoins des premières versions : seulement pour afficher les anciennes envies.
-const LEGACY_NEEDS = {
-  souffler: { label: "Souffler", short: "souffler", icon: "wind" },
-  occuper: { label: "M'occuper la tête", short: "m'occuper la tête", icon: "sparkle" },
-  decrocher: { label: "Décrocher du travail", short: "décrocher du travail", icon: "briefcase" },
-  reflexe: { label: "Juste le réflexe", short: "le réflexe", icon: "phone" },
-};
-
-// Raison affichée pour une envie : son déclencheur, ou son ancien besoin.
+// Raison affichée pour une envie : son déclencheur.
 function cravingReason(craving) {
-  if (craving.trigger) return TRIGGERS.find((t) => t.id === craving.trigger);
-  return { id: `need-${craving.need}`, ...LEGACY_NEEDS[craving.need] };
+  return TRIGGERS.find((t) => t.id === craving.trigger) || { id: "aucun", label: "Sans déclencheur", short: "une envie", icon: "phone" };
 }
 
 const SLOTS = [
