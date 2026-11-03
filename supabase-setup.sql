@@ -1,6 +1,6 @@
 -- Pause — tables Supabase.
 -- À exécuter une seule fois dans l'éditeur SQL du projet Supabase « Aurora »
--- (le même que celui d'Aurora, Ironly et Osmosy : tables séparées,
+-- (le même que celui d'Aurora, Ironly et Inventory.ia : tables séparées,
 -- préfixées "pause_", donc aucun risque pour les données des autres apps).
 --
 -- Archivage : rien n'est effacé, les éléments terminés reçoivent une date
