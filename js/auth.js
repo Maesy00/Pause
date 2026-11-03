@@ -2,7 +2,7 @@
  * auth.js — écran de connexion et gestion de la session Supabase.
  * Tant que personne n'est connecté, seul l'écran de connexion est
  * visible ; le reste de l'app (#app-shell) reste caché.
- * Même compte que pour Aurora, Ironly et Osmosy.
+ * Même compte que pour Aurora, Ironly et Inventory.ia.
  */
 
 const authGate = document.getElementById("auth-gate");
